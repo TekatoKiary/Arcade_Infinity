@@ -1,8 +1,12 @@
+# Это, можно сказать, черновик
+
 import pygame
 import os
 import random
 import player
 import math
+
+mouse_pos = (0, 0)
 
 
 class Player(pygame.sprite.Sprite):
@@ -31,6 +35,7 @@ class Gun(pygame.sprite.Sprite):
         self.add(gun_sprites)
 
         self.image = pygame.Surface((25, 25), pygame.SRCALPHA, 32)
+        self.rotate_image = self.image
         self.rect = self.image.get_rect()
         pygame.draw.rect(self.image, (128, 255, 128), (0, 0, 25, 25), 0)
 
@@ -40,17 +45,33 @@ class Gun(pygame.sprite.Sprite):
         self.cord_x = self.rect.x
         self.cord_y = self.rect.y
 
+        self.is_raised = False
+
     def update(self):
         self.rect.x = self.cord_x
         self.rect.y = self.cord_y
 
         if pygame.sprite.spritecollide(self, player_sprite, False):
+            self.is_raised = True
+
+        if self.is_raised:
             self.cord_x = pl.cord_x + 30
             self.cord_y = pl.cord_y + 20
 
-    def rotate(self):
-        pass
+        
 
+        self.rotate()
+
+
+    def rotate(self):
+        # self.image = pygame.transform.rotate(self.image, int(self.math_angle()))
+        self.image = pygame.transform.rotate(self.rotate_image, self.math_angle())
+
+    def math_angle(self):
+        rel_x, rel_y = mouse_pos[0] - self.cord_x - 25 / 2, mouse_pos[1] - self.cord_y - 25 / 2
+        angle = (180 / math.pi) * math.atan2(rel_x, rel_y)
+        return angle
+ 
     def shoot(self):
         pass
 
@@ -89,6 +110,10 @@ if __name__ == '__main__':
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            
+            if event.type == pygame.MOUSEMOTION:
+                mouse_pos = event.pos
+
 
         k_pressed()
 
