@@ -1,0 +1,118 @@
+{
+    "Map/SizeTest": {
+        "height": 4300,
+        "width": 2
+    },
+    "activeFile": "map3.tmx",
+    "expandedProjectPaths": [
+        "ready_map",
+        "."
+    ],
+    "fileStates": {
+        "base_map_with_gates.tmx": {
+            "scale": 0.81826171875,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 588.4425349087004,
+                "y": 265.80737558181164
+            }
+        },
+        "mainlevbuild.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "map1.tmx": {
+            "scale": 1.5,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 257.66666666666663,
+                "y": 133.66666666666669
+            }
+        },
+        "map2.tmx": {
+            "scale": 1.10029296875,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 280.37987041803495,
+                "y": -74.07118132599629
+            }
+        },
+        "map3.tmx": {
+            "scale": 0.75,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 279.3333333333333,
+                "y": 126
+            }
+        },
+        "ready_map/base_map_with_gates.tmx": {
+            "scale": 1.10029296875,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 256.7498003017662,
+                "y": 256.7498003017662
+            }
+        },
+        "ready_map/mainlevbuild.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "ready_map/map1.tmx": {
+            "scale": 0.5900390624999999,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 256.7626613704072,
+                "y": 255.91525984773256
+            }
+        },
+        "ready_map/map2.tmx": {
+            "scale": 1.10029296875,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 256.7498003017662,
+                "y": 256.7498003017662
+            }
+        },
+        "ready_map/map3.tmx": {
+            "scale": 1.10029296875,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 256.7498003017662,
+                "y": 256.7498003017662
+            }
+        }
+    },
+    "last.imagePath": "D:/Programming codes/map",
+    "map.height": 32,
+    "map.lastUsedFormat": "tmx",
+    "map.layerDataFormat": null,
+    "map.tileHeight": 16,
+    "map.tileWidth": 16,
+    "map.width": 32,
+    "mapScene.enableWorlds": true,
+    "openFiles": [
+        "mainlevbuild.tsx",
+        "map3.tmx"
+    ],
+    "project": "map.tiled-project",
+    "recentFiles": [
+        "mainlevbuild.tsx",
+        "ready_map/mainlevbuild.tsx",
+        "ready_map/map3.tmx",
+        "ready_map/base_map_with_gates.tmx",
+        "ready_map/map2.tmx",
+        "map3.tmx",
+        "map2.tmx",
+        "map1.tmx",
+        "ready_map/map1.tmx",
+        "base_map_with_gates.tmx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.spacing": 0,
+    "tileset.tileSize": {
+        "height": 16,
+        "width": 16
+    },
+    "tileset.type": 0
+}

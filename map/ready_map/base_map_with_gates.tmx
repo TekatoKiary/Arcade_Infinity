@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="16" infinite="0" nextlayerid="4" nextobjectid="1">
+ <tileset firstgid="1" source="mainlevbuild.tsx"/>
+ <layer id="3" name="пол" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztlUEOgkAMRbuaORHq0kspLr2UjBcDXNoGGutQGSRSFzNNfj6ZpPw8KAXg+6o8QO8AOvfyh1txo5VF+XvUTvjB2+bH/Nb5v+a/IUOzQGH0mH9JL+uuzErr3nm2dG1W24hnS/+UX/gLfw782q6y5Jf5vNMsuON9GcZrPrfiZyd1Rry9whnn58iPc3CsjbnJz6jal+8/x/3/b/7c33/hn+ZXBtxz/Cc/7ETei3Pif4YUcaX6WBcln6rxg0JC/Kyk8Oya6mPJegK8Yfuk
+  </data>
+ </layer>
+ <layer id="1" name="стены" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzt11lPU0EUwPHJ7W1p2YqY9JWtwa8xIYiK0SDERODBthD4GoZVMBqXCC4PbgS+B7iABuPyovDAGvka/if3TnpD5haGNLd9gOSXwmXmnJmh5cxxY0LEkUANkkihFnWoRwMakcZ0Qtxr5bUN+rUdHZZx+uJC3EI3319GD67gKq6hF9dxxxViEEMYRh/P3ga8w3t88MffwE2Vx/GExXlM7ieYUnvCDGZxH3OYxwO8YOxLvMJrNY9nuwF72MeBP/4hHqk1OJ6wOD/I/RMf+d0nfMYXrGMDX/ENfxj7F1vYVvPUubtFbWhHh+uN38R3tQbHExanKSHEBUywhkkkeFaDJFKoRR3q0YBGpNU8ZIj7HAtYxG3He6bGnzbOU3I+ixfzZ5xo/SLn75D8nbhUxlymeM2c/UWsknvtWP4xjJcxvyleqfNfxkoZ85vilTr/fzgqY35TPH3+1fj+i0Kl91/pz7/Of5f/jTkEv06a22KofdmYXX5Vr0bxxq9jNnP1mvMoYMSPZZt/KebF2rWcq9ccrL1LljFUvTz099/q2s3dMdTewzPsP+sWY9nMbTHU3qzlHvSadSyrvz/jc8ijgBGMWsbQa6705+88f/Xlj+L+Uyp/FPcfXX+7KnT/0fXXlD+K+0+1vP9M998o6PN3Y0LSt0r6VknfKulbJX2rpG+V9K2SvlXSt0r6Vpn2fw7rv4LjTopD/yvpf2UXa+i3lHOLgjXANs4A/gMvFePv
+  </data>
+ </layer>
+</map>

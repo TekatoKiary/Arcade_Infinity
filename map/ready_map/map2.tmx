@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="16" infinite="0" nextlayerid="5" nextobjectid="1">
+ <tileset firstgid="1" source="mainlevbuild.tsx"/>
+ <layer id="3" name="пол" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJztlUEOgkAMRbuaORHq0kspLr2UjBcDXNoGGutQGSRSFzNNfj6ZpPw8KAXg+6o8QO8AOvfyh1txo5VF+XvUTvjB2+bH/Nb5v+a/IUOzQGH0mH9JL+uuzErr3nm2dG1W24hnS/+UX/gLfw782q6y5Jf5vNMsuON9GcZrPrfiZyd1Rry9whnn58iPc3CsjbnJz6jal+8/x/3/b/7c33/hn+ZXBtxz/Cc/7ETei3Pif4YUcaX6WBcln6rxg0JC/Kyk8Oya6mPJegK8Yfuk
+  </data>
+ </layer>
+ <layer id="4" name="столбы" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzt1MkNwjAURdGvnywZuoBmGCSGFqAZBilAC9BPAi1AG9yd7SyJZBHpHenq7/x2NvsPq9JsTRvalr+/M3CzIY1o7NH7RVpbxeaFrnTrsD9jc04LWkb7VZHWVrPZ0JNeHfYPbB7pROdovy7SRET6asLfNvVwc9uxufdwc7uz+fBwc3uz+fFwRUREpD++wxMaWQ==
+  </data>
+ </layer>
+ <layer id="1" name="стены" width="32" height="32">
+  <data encoding="base64" compression="zlib">
+   eJzt19tO1EAcx/FJt9tlWXZXMOER5DUmGw4ekCwSEtR7eQ2jiJw0HqIo3GhM9D0UUeQQhRvQG7iR1/A7wQlN6cy03Va9sMknZbsz85tOu7R/vyREGQEq6EIV3aihB3U00MS9QNwWhi3NOO2yEOMY5O8hDGMEF3EJl3EFU74Q13EDN9EumdJP2o/iKsZUlmce5xHZjzGjzgmzuI85zGMBi3hB25dYwarqZ8lX7ZfwAA/VHDzzOF/J/oY1vvuIdXzCZ2zgCzaxT9sDfMcP1c+Sr9pvYRs7ag6eeZxzgRC9uMMc7iLgWAVdqKIbNfSgjgaaqh/6GfcZnmMZk97JMdU+6ThPyHxaPs3v9/6sXTL3DPl6yysrbrw+1v483pP9oXy2bd750WOm9Q+3fcV1eu1nz7X1t62/dkjfow7ybf31+v+r91/R+bbzLyI/Oqbt95/k/n8T4Zq7KT9uS7IGpvyka2DKdfXX7S5gILTvNN+1XlG3MB3a553vmstbvAvti8yP8xPHoX3e1z/LnLLkm/7/FZ3vev7/z88/O2l+1t+EKzttfl7vH3Hno5+/LUt+Xu8fcfn6+WvLz2MzXc+//f6t86Pvv1nvq+j5uej190tCUrdK6lZJ3SqpWyV1q6RuldStkrpVUrdK6lbZ/P3ZtNbhdq5xqH8l9a9sMYdrKZm2tONM4BeM9r35
+  </data>
+ </layer>
+</map>
