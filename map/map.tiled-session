@@ -55,6 +55,14 @@
                 "y": 382.3333333333333
             }
         },
+        "ready_map/bottom_wall.tmx": {
+            "scale": 0.778622159090909,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 352.54583599379737,
+                "y": 25.044239715406377
+            }
+        },
         "ready_map/decorative.tsx": {
             "scaleInDock": 1,
             "scaleInEditor": 4
@@ -75,13 +83,21 @@
                 "y": 354.28064258453895
             }
         },
+        "ready_map/left_right_wall.tmx": {
+            "scale": 0.8002130681818181,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": -31.866512825064376,
+                "y": 353.0309754149286
+            }
+        },
         "ready_map/mainlevbuild.tsx": {
             "scaleInDock": 0.75,
             "scaleInEditor": 1
         },
         "ready_map/map1.tmx": {
             "scale": 0.75,
-            "selectedLayer": 1,
+            "selectedLayer": 0,
             "viewCenter": {
                 "x": 408,
                 "y": 351.33333333333337
@@ -89,9 +105,9 @@
         },
         "ready_map/map2.tmx": {
             "scale": 0.75,
-            "selectedLayer": 1,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 323.33333333333326,
+                "x": 324,
                 "y": 360.66666666666663
             }
         },
@@ -99,12 +115,20 @@
             "scale": 0.8002130681818181,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 352.40614183012343,
-                "y": 353.0309754149286
+                "x": 599.2154078281708,
+                "y": 512.9883731250554
             }
         },
         "ready_map/ready_map/mainlevbuild.tsx": {
             "scaleInDock": 1
+        },
+        "ready_map/top_wall.tmx": {
+            "scale": 0.882528409090909,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 308.7719298245614,
+                "y": 44.75776597456951
+            }
         },
         "ready_map/vertical_corridor.tmx": {
             "scale": 0.8933238636363635,
@@ -117,7 +141,7 @@
     },
     "last.externalTilesetPath": "C:/Users/1/PycharmProjects/Arcade_Infinity/map/ready_map",
     "last.imagePath": "C:/Users/1/PycharmProjects/Arcade_Infinity/map/ready_map",
-    "map.height": 36,
+    "map.height": 3,
     "map.lastUsedFormat": "tmx",
     "map.layerDataFormat": null,
     "map.tileHeight": 16,
@@ -134,18 +158,18 @@
     ],
     "project": "map.tiled-project",
     "recentFiles": [
-        "ready_map/base_map_with_gates.tmx",
-        "ready_map/vertical_corridor.tmx",
-        "ready_map/map3.tmx",
+        "ready_map/top_wall.tmx",
         "ready_map/map1.tmx",
+        "ready_map/map3.tmx",
+        "ready_map/horizontal_corridor.tmx",
+        "ready_map/vertical_corridor.tmx",
+        "ready_map/base_map_with_gates.tmx",
         "ready_map/mainlevbuild.tsx",
         "mainlevbuild.tsx",
         "ready_map/map2.tmx",
-        "ready_map/horizontal_corridor.tmx",
         "ready_map/decorative.tsx",
         "ready_map/horizontal_coridor.tmx",
-        "map3.tmx",
-        "map2.tmx"
+        "map3.tmx"
     ],
     "tileset.lastUsedFormat": "tsx",
     "tileset.spacing": 0,
