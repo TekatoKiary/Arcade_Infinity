@@ -51,7 +51,7 @@
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 345,
+                "x": 344.66666666666663,
                 "y": 382.3333333333333
             }
         },
@@ -71,7 +71,7 @@
             "scale": 0.8002130681818181,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 126.84121771545222,
+                "x": 103.72237507766044,
                 "y": 354.28064258453895
             }
         },
@@ -83,7 +83,7 @@
             "scale": 0.75,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 407.33333333333326,
+                "x": 408,
                 "y": 351.33333333333337
             }
         },
@@ -99,26 +99,30 @@
             "scale": 0.8002130681818181,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 358.0296440933701,
-                "y": 199.3219135528535
+                "x": 352.40614183012343,
+                "y": 353.0309754149286
             }
+        },
+        "ready_map/ready_map/mainlevbuild.tsx": {
+            "scaleInDock": 1
         },
         "ready_map/vertical_corridor.tmx": {
             "scale": 0.8933238636363635,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 346.4588964859278,
-                "y": 414.74320241691845
+                "x": 341.42152965495313,
+                "y": 284.89107966290345
             }
         }
     },
+    "last.externalTilesetPath": "C:/Users/1/PycharmProjects/Arcade_Infinity/map/ready_map",
     "last.imagePath": "C:/Users/1/PycharmProjects/Arcade_Infinity/map/ready_map",
-    "map.height": 44,
+    "map.height": 36,
     "map.lastUsedFormat": "tmx",
     "map.layerDataFormat": null,
     "map.tileHeight": 16,
     "map.tileWidth": 16,
-    "map.width": 36,
+    "map.width": 44,
     "mapScene.enableWorlds": true,
     "openFiles": [
         "ready_map/mainlevbuild.tsx",
@@ -130,11 +134,11 @@
     ],
     "project": "map.tiled-project",
     "recentFiles": [
+        "ready_map/base_map_with_gates.tmx",
+        "ready_map/vertical_corridor.tmx",
         "ready_map/map3.tmx",
         "ready_map/map1.tmx",
         "ready_map/mainlevbuild.tsx",
-        "ready_map/vertical_corridor.tmx",
-        "ready_map/base_map_with_gates.tmx",
         "mainlevbuild.tsx",
         "ready_map/map2.tmx",
         "ready_map/horizontal_corridor.tmx",

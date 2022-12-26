@@ -38,7 +38,6 @@ class Room:
 class Corridor:
     def __init__(self, x, y, orientation):
         self.map = pytmx.load_pygame(f'map\\ready_map\\{orientation}_corridor.tmx')
-        # 672 +
         self.x = x * (704 + 512)
         self.y = y * (704 + 512)
         if orientation == 'vertical':
@@ -90,7 +89,7 @@ class Labyrinth:
                     if kx:
                         self.corridors.append(Corridor(min(x, x + kx), y, 'horizontal'))
                     else:
-                        self.corridors.append(Corridor(x, min(y, y + kx), 'vertical'))
+                        self.corridors.append(Corridor(x, min(y, y + ky), 'vertical'))
                     x, y = x + kx, y + ky
                     room = Room(x, y)
                     self.map_list[y][x] = room
