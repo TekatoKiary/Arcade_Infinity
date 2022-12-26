@@ -111,18 +111,48 @@ class Bullet(pygame.sprite.Sprite):
         self.cords_from = cords_from
         self.cords_to = cords_to
 
+        self.cords = [self.cords_from[0], self.cords_from[1]]
+
         self.image = pygame.Surface((10, 10), pygame.SRCALPHA, 32)
         self.rect = self.image.get_rect()
         self.rect.x = self.cords_from[0]
         self.rect.y = self.cords_from[1]
         pygame.draw.rect(self.image, (128, 128, 128), (0, 0, 10, 10), 0)
 
+        self.move()
+
     def math_angle(self):
         rel_x, rel_y = mouse_pos[0] - self.cord_x - \
         self.img_width / 2, mouse_pos[1] - self.cord_y - self.img_height / 2
         angle = (180 / math.pi) * math.atan2(rel_x, rel_y)
         return angle
+    
+    def math_speed(self):
+        rel_x, rel_y = self.cords_to[0] - self.cords_from[0] - \
+                self.image.get_width() / 2, self.cords_to[1] - self.cords_from[1] - self.image.get_height() / 2
+        
+        vx = round(rel_x / math.sqrt(rel_x ** 2 + rel_y ** 2) * 250, 2)
+        vy = round(rel_y / math.sqrt(rel_x ** 2 + rel_y ** 2) * 250, 2)
 
+        return(vx, vy)
+
+    def move(self):
+        vx, vy = self.math_speed()
+
+        self.cords[0] += vx / 60
+        self.cords[1] += vy / 60
+
+    def update(self):
+        self.move()
+
+        self.rect.x = self.cords[0]
+        self.rect.y = self.cords[1]
+
+        self.collision_handling()
+    
+    def collision_handling(self):
+        pass
+ 
 
 all_sprites = pygame.sprite.Group()
 player_sprite = pygame.sprite.Group()
