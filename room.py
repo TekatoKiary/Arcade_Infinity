@@ -85,8 +85,10 @@ class Corridor(RoomCorridor):
         super(Corridor, self).__init__(x, y, f'{orientation}_corridor')
         if orientation == 'vertical':
             self.y += 672
+            self.x += 288
         else:
             self.x += 672
+            self.y += 336 - self.tile_size * 13 // 2
 
     def move(self):
         key = pygame.key.get_pressed()
