@@ -15,8 +15,10 @@ class Labyrinth:
         print(*self.map_list, sep='\n')
 
     def create_rooms(self):
-        self.count_room = random.randrange(1, 4)  # кол-во доп комнат в уровне,
+        count_room = random.randrange(1, 4)
+        # кол-во доп комнат в уровне,
         # то есть без учета первой комнаты, комнаты с врагами(их 2) и последней комнаты
+        chess_room = random.randrange(count_room)
         coords_all_room = []  # список координат комнат
         coords_hor_cor = []  # список координат горизонтальных коридоров
         coords_ver_cor = []  # список координат вертикальных коридоров
@@ -37,21 +39,23 @@ class Labyrinth:
                         self.corridors.append(Corridor(x, min(y, y + ky), 'vertical'))
                         coords_ver_cor.append((x, min(y, y + ky)))
                     x, y = x + kx, y + ky
-                    room = Room(x, y, f'map{random.randrange(1, 4)}') if i < 2 else Room(x, y, f'end_room')
+                    room = Room(x, y, f'map{random.randrange(1, 4)}') \
+                        if i < 2 else Room(x, y, f'end_room')
                     self.map_list[y][x] = room
                     self.rooms.append(room)
                     coords_all_room.append((x, y))
                     break
                 else:
                     del d[d.index((kx, ky))]
-        while self.count_room != 0:  # создание доп комнат
+        while count_room != -1:  # создание доп комнат
             x, y = random.randrange(4), random.randrange(4)
             if not self.map_list[y][x]:
                 for kx, ky in [(0, -1), (0, 1), (1, 0), (-1, 0)]:
                     if 4 > x + kx >= 0 and 4 > y + ky >= 0 and self.map_list[y + ky][x + kx] \
                             and self.rooms[0] != self.map_list[y + ky][x + kx] and \
                             self.rooms[3] != self.map_list[y + ky][x + kx]:
-                        room = Room(x, y, f'map{random.randrange(1, 4)}')
+                        room = Room(x, y,
+                                    f'map{random.randrange(1, 4)}' if chess_room == count_room else 'room_with_chess')
                         self.map_list[y][x] = room
                         self.rooms.append(room)
                         coords_all_room.append((x, y))
@@ -63,7 +67,7 @@ class Labyrinth:
                             coords_ver_cor.append((x, min(y, y + ky)))
                         break
                 if self.map_list[y][x]:
-                    self.count_room -= 1
+                    count_room -= 1
         for x, y in coords_all_room:  # вместо того чтобы просто пройтись по self.map_list лучше это
             walls = []
             for kx, ky in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
@@ -92,6 +96,27 @@ class Labyrinth:
                 corridor.render(screen)
 
 
+class Player(pygame.sprite.Sprite):
+    # Временно
+    def __init__(self, ):
+        super(Player, self).__init__()
+        self.image = pygame.Surface((50, 50), pygame.SRCALPHA, 32)
+        self.x = WIDTH // 2
+        self.y = HEIGHT // 2
+        pygame.draw.rect(screen, (255, 191, 0), (self.x, self.y, *self.image.get_size()))
+
+    def move(self):
+        key = pygame.key.get_pressed()
+        if key[pygame.K_w] or key[pygame.K_UP]:
+            self.y += 10
+        if key[pygame.K_s] or key[pygame.K_DOWN]:
+            self.y -= 10
+        if key[pygame.K_a] or key[pygame.K_LEFT]:
+            self.x += 10
+        if key[pygame.K_d] or key[pygame.K_RIGHT]:
+            self.x -= 10
+
+
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('Game')
@@ -101,11 +126,13 @@ if __name__ == '__main__':
     FPS = 60
     running = 1
     lab = Labyrinth()
+    player = Player()
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
         screen.fill((0, 0, 0))
+        player.move()
         lab.update(screen)
         pygame.display.update()
         clock.tick(FPS)

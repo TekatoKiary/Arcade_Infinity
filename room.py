@@ -67,10 +67,12 @@ class Room(RoomCorridor):
             x1, y1, x2, y2 = self.rect_in_screen(is_right + self.x, is_bottom + self.y, wall.width, wall.height)
             for y in range(y1, y2):
                 for x in range(x1, x2):
-                    image = wall.get_tile_image(x, y, 0)
-                    if image:
-                        screen.blit(image,
-                                    (self.x + x * self.tile_size + is_right, self.y + y * self.tile_size + is_bottom))
+                    for layer in range(len(wall.layers)):
+                        image = wall.get_tile_image(x, y, layer)
+                        if image:
+                            screen.blit(image,
+                                        (self.x + x * self.tile_size + is_right,
+                                         self.y + y * self.tile_size + is_bottom))
 
     def set_walls(self, left, right, top, bottom):
         self.walls = []
@@ -89,14 +91,3 @@ class Corridor(RoomCorridor):
         else:
             self.x += 672
             self.y += 336 - self.tile_size * 13 // 2
-
-    def move(self):
-        key = pygame.key.get_pressed()
-        if key[pygame.K_w] or key[pygame.K_UP]:
-            self.y += 10
-        if key[pygame.K_s] or key[pygame.K_DOWN]:
-            self.y -= 10
-        if key[pygame.K_a] or key[pygame.K_LEFT]:
-            self.x += 10
-        if key[pygame.K_d] or key[pygame.K_RIGHT]:
-            self.x -= 10
