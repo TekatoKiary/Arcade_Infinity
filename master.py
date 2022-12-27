@@ -5,9 +5,9 @@ import os
 import random
 import player
 import math
+import time
 
-mouse_pos = (0, 0)
-
+mouse_pos = (0, 0)           
 
 class Hands(pygame.sprite.Sprite):
     def __init__(self):
@@ -15,8 +15,8 @@ class Hands(pygame.sprite.Sprite):
 
         self.rect = (0, 0, 0, 0)
         self.image = pygame.Surface((50, 50), pygame.SRCALPHA, 32)
-    
-    def shoot(self):
+
+    def try_shoot(self):
         pass
 
 
@@ -40,21 +40,27 @@ class Player(pygame.sprite.Sprite):
     def update(self):
         self.rect.x = self.cord_x
         self.rect.y = self.cord_y
-    
+
     def on_clicked(self, event):
         if event.button == 1:
-            self.active_gun.shoot()
+            self.active_gun.try_shoot()
 
 
 class Gun(pygame.sprite.Sprite):
-    def __init__(self, center_pos, image, damage_type='point', damage=0, splash_damage=0, splash_radius=0):
+    def __init__(self, center_pos, image, damage_type='point', damage=0, splash_damage=0, splash_radius=0, ammo=10, reload_time=3000, reload_event=1):
         super().__init__(all_sprites)
         self.add(gun_sprites)
 
+        # Их не изменять
         self.damage_type = damage
         self.damage = damage
         self.splash_damage = splash_damage
         self.splash_radius = splash_radius
+        self.ammo = ammo
+
+        self.ammo_amount = self.ammo
+        self.reload_time = reload_time
+        self.reload_event = pygame.USEREVENT + reload_event
 
         self.image = pygame.Surface((25, 25), pygame.SRCALPHA, 32)
         self.rotate_image = self.image
@@ -70,25 +76,24 @@ class Gun(pygame.sprite.Sprite):
         self.cord_y = self.rect.y
 
         self.is_raised = False
+        self.is_reloading_now = False
+
+    def try_shoot(self):
+        if not self.is_reloading_now:
+            if pl.active_gun.__class__.__name__ != 'Hands':
+                if self.ammo_amount > 0:
+                    self.shoot()
+                else:
+                    self.is_reloading_now = True
+                    pygame.time.set_timer(self.reload_event, self.reload_time)
     
-
     def shoot(self):
-        if pl.active_gun.__class__.__name__ != 'Hands':
-            Bullet(pl.active_gun, (self.cord_x, self.cord_y), mouse_pos)
-
-    def update(self):
-        self.rect.x = self.cord_x
-        self.rect.y = self.cord_y
-
-        if pygame.sprite.spritecollide(self, player_sprite, False):
-            self.is_raised = True
-
-        if self.is_raised:
-            pl.active_gun = self
-            self.cord_x = pl.cord_x + 30
-            self.cord_y = pl.cord_y + 20
-
-            self.rotate()
+        self.ammo_amount -= 1
+        Bullet(pl.active_gun, (self.cord_x, self.cord_y), mouse_pos)
+    
+    def reload_ammo(self):
+        self.is_reloading_now = False
+        self.ammo_amount += self.ammo
 
     def rotate(self):
         # self.image = pygame.transform.rotate(self.image, int(self.math_angle()))
@@ -97,16 +102,32 @@ class Gun(pygame.sprite.Sprite):
 
     def math_angle(self):
         rel_x, rel_y = mouse_pos[0] - self.cord_x - \
-        self.img_width / 2, mouse_pos[1] - self.cord_y - self.img_height / 2
+            self.img_width / 2, mouse_pos[1] - \
+            self.cord_y - self.img_height / 2
         angle = (180 / math.pi) * math.atan2(rel_x, rel_y)
         return angle
+
+    def update(self):
+        self.rect.x = self.cord_x
+        self.rect.y = self.cord_y
+
+        if pygame.sprite.spritecollide(self, player_sprite, False):
+            if pl.active_gun.__class__.__name__ == 'Hands':
+                self.is_raised = True
+
+        if self.is_raised:
+            pl.active_gun = self
+            self.cord_x = pl.cord_x + 30
+            self.cord_y = pl.cord_y + 20
+
+            self.rotate()
 
 
 class Bullet(pygame.sprite.Sprite):
     # damage_type: point, splash
     def __init__(self, gun, cords_from=(0, 0), cords_to=(0, 0)):
         super().__init__(all_sprites)
-        
+
         self.gun = gun
         self.cords_from = cords_from
         self.cords_to = cords_to
@@ -123,18 +144,21 @@ class Bullet(pygame.sprite.Sprite):
 
     def math_angle(self):
         rel_x, rel_y = mouse_pos[0] - self.cord_x - \
-        self.img_width / 2, mouse_pos[1] - self.cord_y - self.img_height / 2
+            self.img_width / 2, mouse_pos[1] - \
+            self.cord_y - self.img_height / 2
         angle = (180 / math.pi) * math.atan2(rel_x, rel_y)
         return angle
-    
+
     def math_speed(self):
         rel_x, rel_y = self.cords_to[0] - self.cords_from[0] - \
-                self.image.get_width() / 2, self.cords_to[1] - self.cords_from[1] - self.image.get_height() / 2
-        
-        vx = round(rel_x / math.sqrt(rel_x ** 2 + rel_y ** 2) * 250, 2)
-        vy = round(rel_y / math.sqrt(rel_x ** 2 + rel_y ** 2) * 250, 2)
+            self.image.get_width() / \
+            2, self.cords_to[1] - self.cords_from[1] - \
+            self.image.get_height() / 2
 
-        return(vx, vy)
+        vx = round(rel_x / math.sqrt(rel_x ** 2 + rel_y ** 2) * 300, 2)
+        vy = round(rel_y / math.sqrt(rel_x ** 2 + rel_y ** 2) * 300, 2)
+
+        return (vx, vy)
 
     def move(self):
         vx, vy = self.math_speed()
@@ -149,14 +173,10 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.y = self.cords[1]
 
         self.collision_handling()
-    
+
     def collision_handling(self):
         pass
- 
-
-all_sprites = pygame.sprite.Group()
-player_sprite = pygame.sprite.Group()
-gun_sprites = pygame.sprite.Group()
+    
 
 
 def k_pressed():
@@ -172,8 +192,14 @@ def k_pressed():
         pl.cord_x += 80 / 60
 
 
+all_sprites = pygame.sprite.Group()
+player_sprite = pygame.sprite.Group()
+gun_sprites = pygame.sprite.Group()
+
+
 pl = Player((100, 100), '[image_name]')
-gun = Gun((200, 200), '[image_name]')
+gun = Gun((200, 200), '[image_name]', ammo=30)
+gun2 = Gun((300, 200), '[image_name]', ammo=5, reload_time=1000)
 
 if __name__ == '__main__':
     pygame.init()
@@ -194,6 +220,11 @@ if __name__ == '__main__':
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pl.on_clicked(event)
+            
+            if pl.active_gun.__class__.__name__ != 'Hands':
+                if event.type == pl.active_gun.reload_event:
+                    pl.active_gun.reload_ammo()
+                    pygame.time.set_timer(pl.active_gun.reload_event, 0)
 
         k_pressed()
 
