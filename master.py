@@ -1,5 +1,3 @@
-# Это, можно сказать, черновик
-
 import pygame
 import os
 import random
@@ -58,6 +56,8 @@ class Player(pygame.sprite.Sprite):
             self.active_gun.is_raised = False
             self.active_gun.is_reloading_now = False
             pygame.time.set_timer(pl.active_gun.reload_event, 0)
+            pl.active_gun.can_shoot = True
+            pygame.time.set_timer(pl.active_gun.shoot_event, 0)
             self.active_gun = Hands()
 
     def update(self):
@@ -66,7 +66,7 @@ class Player(pygame.sprite.Sprite):
 
 
 class Gun(pygame.sprite.Sprite):
-    def __init__(self, center_pos, image, damage_type='point', bullet_color=(128, 128, 128), fire_rate=300, \
+    def __init__(self, center_pos, image, damage_type='point', bullet_color=(128, 128, 128), bullet_size=(10, 10), fire_rate=300, \
         damage=0, splash_damage=0, splash_radius=0, ammo=10, reload_time=3000, reload_event=1, shoot_event=2):
 
         super().__init__(all_sprites)
@@ -74,7 +74,8 @@ class Gun(pygame.sprite.Sprite):
 
         # Их не изменять
         self.bullet_color = bullet_color
-        self.damage_type = damage
+        self.bullet_size = bullet_size
+        self.damage_type = damage_type
         self.damage = damage
         self.splash_damage = splash_damage
         self.splash_radius = splash_radius
@@ -126,7 +127,6 @@ class Gun(pygame.sprite.Sprite):
         self.ammo_amount += self.ammo
 
     def rotate(self):
-        # self.image = pygame.transform.rotate(self.image, int(self.math_angle()))
         self.image = pygame.transform.rotate(
             self.rotate_image, self.math_angle())
 
@@ -151,7 +151,7 @@ class Gun(pygame.sprite.Sprite):
 
 class Bullet(pygame.sprite.Sprite):
     # damage_type: point, splash
-    def __init__(self, gun, cords_from=(0, 0), cords_to=(0, 0), width=10, height=10):
+    def __init__(self, gun, cords_from=(0, 0), cords_to=(0, 0)):
         super().__init__(all_sprites)
 
         self.gun = gun
@@ -160,21 +160,19 @@ class Bullet(pygame.sprite.Sprite):
 
         self.cords = [self.cords_from[0], self.cords_from[1]]
 
-        self.width = width
-        self.height = height
-        self.image = pygame.Surface((self.width, self.height), pygame.SRCALPHA, 32)
+        self.image = pygame.Surface((self.gun.bullet_size[0], self.gun.bullet_size[1]), pygame.SRCALPHA, 32)
         self.rect = self.image.get_rect()
         self.rect.x = self.cords_from[0]
         self.rect.y = self.cords_from[1]
-        pygame.draw.rect(self.image, self.gun.bullet_color, (0, 0, self.width, self.height), 0)
+        pygame.draw.rect(self.image, self.gun.bullet_color, (0, 0, self.gun.bullet_size[0], self.gun.bullet_size[1]), 0)
 
         self.vx, self.vy = self.math_speed()
         self.rotate()
 
     def math_angle(self):
         rel_x, rel_y = mouse_pos[0] - self.rect.x - \
-            self.width / 2, mouse_pos[1] - \
-            self.rect.y - self.height / 2
+            self.gun.bullet_size[0] / 2, mouse_pos[1] - \
+            self.rect.y - self.gun.bullet_size[1] / 2
         angle = (180 / math.pi) * math.atan2(rel_x, rel_y)
         return angle
     
@@ -228,7 +226,7 @@ gun_sprites = pygame.sprite.Group()
 
 
 pl = Player((100, 100), '[image_name]')
-gun = Gun((200, 200), '[image_name]', ammo=30, bullet_color=(255, 255, 255), fire_rate=150)
+gun = Gun((200, 200), '[image_name]', ammo=30, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150)
 gun2 = Gun((300, 200), '[image_name]', ammo=5, reload_time=1000)
 
 if __name__ == '__main__':
