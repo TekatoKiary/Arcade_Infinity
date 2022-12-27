@@ -2,6 +2,8 @@ import pygame
 import pytmx
 import random
 
+TILED_MAP_DIR = 'map\\ready_map'
+
 
 # Классы Room and Corridor будут потом наследоваться
 
@@ -20,16 +22,16 @@ def collide_rect(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2):
 
 class Room:
     def __init__(self, x, y):
-        self.map = pytmx.load_pygame(f'map\\ready_map\\map{random.randrange(1, 4)}.tmx')
+        self.map = pytmx.load_pygame(f'{TILED_MAP_DIR}\\map{random.randrange(1, 4)}.tmx')
         self.x = x * (704 + 512)
         self.y = y * (704 + 512)
         self.height = self.map.height
         self.width = self.map.width
         self.tile_size = self.map.tilewidth
-        # self.walls = [pytmx.load_pygame(f'map\\ready_map\\left_right_wall.tmx')]
+        self.walls = []
 
     def render(self, screen):
-        x1, y1, x2, y2 = self.rect_in_screen(self.width, self.height)
+        x1, y1, x2, y2 = self.rect_in_screen(self.width, self.height, 0, 0)
         for y in range(y1, y2):
             for x in range(x1, x2):
                 for layer in range(len(self.map.layers)):
@@ -37,28 +39,34 @@ class Room:
                     if image:
                         screen.blit(image, (self.x + x * self.tile_size, self.y + y * self.tile_size))
         # Еще в разработке
-        # for wall in self.walls:
-        #     x1, y1, x2, y2 = self.rect_in_screen(wall.width, wall.height)
-        #     for y in range(y1, y2):
-        #         for x in range(x1, x2):
-        #             image = wall.get_tile_image(x, y, 0)
-        #             if image:
-        #                 screen.blit(image,
-        #                             (self.x + x * self.tile_size, self.y + y * self.tile_size))
+        for wall in self.walls:
+            is_bottom = ((self.height - 3) * self.tile_size) if wall.filename.find(
+                'bottom') != -1 else 0  # если нижняя стена
+            # если правая стена:
+            is_right = ((self.width - 2) * self.tile_size) if wall.filename.find('right') != -1 else 0
+            x1, y1, x2, y2 = self.rect_in_screen(wall.width, wall.height, is_right, is_bottom)
+            for y in range(y1, y2):
+                for x in range(x1, x2):
+                    image = wall.get_tile_image(x, y, 0)
+                    if image:
+                        screen.blit(image,
+                                    (self.x + x * self.tile_size + is_right, self.y + y * self.tile_size + is_bottom))
 
-    def rect_in_screen(self, width_dec, height_dec):
+    def rect_in_screen(self, width_dec, height_dec, is_right, is_bottom):
         """Возвращает начальные и конечные координаты ячеек комнаты, которые попадают на экран"""
         # Без этой оптимизации процесс отрисовки был бы ОЧЕНЬ долгим и просаживался бы FPS
-        x1 = max(0, self.x)
-        x2 = min(width, width_dec * self.tile_size + self.x)
-        x1 = 0 if x1 == self.x else (-self.x // self.tile_size)
-        x2 = width_dec if x2 == width_dec * self.tile_size + self.x \
-            else width_dec - (width_dec * self.tile_size + self.x - width) // self.tile_size
-        y1 = max(0, self.y)
-        y2 = min(height, height_dec * self.tile_size + self.y)
-        y1 = 0 if y1 == self.y else (-self.y // self.tile_size)
-        y2 = height_dec if y2 == height_dec * self.tile_size + self.y \
-            else height_dec - (height_dec * self.tile_size + self.y - height) // self.tile_size
+        x = self.x + is_right  # Из-за нижней и правой стены придется делать так
+        y = self.y + is_bottom
+        x1 = max(0, x)
+        x2 = min(width, width_dec * self.tile_size + x)
+        x1 = 0 if x1 == x else (-x // self.tile_size)
+        x2 = width_dec if x2 == width_dec * self.tile_size + x \
+            else width_dec - (width_dec * self.tile_size + x - width) // self.tile_size
+        y1 = max(0, y)
+        y2 = min(height, height_dec * self.tile_size + y)
+        y1 = 0 if y1 == y else (-y // self.tile_size)
+        y2 = height_dec if y2 == height_dec * self.tile_size + y \
+            else height_dec - (height_dec * self.tile_size + y - height) // self.tile_size
         return x1, y1, x2, y2
 
     def move(self):
@@ -72,10 +80,16 @@ class Room:
         if key[pygame.K_d] or key[pygame.K_RIGHT]:
             self.x -= 10
 
+    def set_walls(self, left, right, top, bottom):
+        walls = ['left' if left else 0, 'right' if right else 0, 'top' if top else 0, 'bottom' if bottom else 0]
+        for i in walls:
+            if i:
+                self.walls.append(pytmx.load_pygame(f'{TILED_MAP_DIR}\\{i}_wall.tmx'))
+
 
 class Corridor:
     def __init__(self, x, y, orientation):
-        self.map = pytmx.load_pygame(f'map\\ready_map\\{orientation}_corridor.tmx')
+        self.map = pytmx.load_pygame(f'{TILED_MAP_DIR}\\{orientation}_corridor.tmx')
         self.x = x * (704 + 512)
         self.y = y * (704 + 512)
         if orientation == 'vertical':
@@ -92,6 +106,7 @@ class Corridor:
             for x in range(x1, x2):
                 for layer in range(len(self.map.layers)):
                     image = self.map.get_tile_image(x, y, layer)
+
                     if image:
                         screen.blit(image, (self.x + x * self.tile_size, self.y + y * self.tile_size))
 
@@ -146,6 +161,7 @@ class Labyrinth:
                         self.corridors.append(Corridor(x, min(y, y + ky), 'vertical'))
                     x, y = x + kx, y + ky
                     room = Room(x, y)
+                    room.set_walls(random.randrange(2), random.randrange(2), random.randrange(2), random.randrange(2))
                     self.map_list[y][x] = room
                     self.rooms.append(room)
 
@@ -160,12 +176,12 @@ class Labyrinth:
                             room.y + room.height * room.tile_size):
                 room.render(screen)
 
-        for corridor in self.corridors:
-            corridor.move()
-            if collide_rect(0, 0, width, height,
-                            corridor.x, corridor.y, corridor.x + corridor.width * corridor.tile_size,
-                            corridor.y + corridor.height * corridor.tile_size):
-                corridor.render(screen)
+        # for corridor in self.corridors:
+        #     corridor.move()
+        #     if collide_rect(0, 0, width, height,
+        #                     corridor.x, corridor.y, corridor.x + corridor.width * corridor.tile_size,
+        #                     corridor.y + corridor.height * corridor.tile_size):
+        #         corridor.render(screen)
 
 
 if __name__ == '__main__':
