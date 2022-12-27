@@ -59,13 +59,21 @@
             "scale": 0.778622159090909,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 351.9036760010946,
+                "x": 604.9147131259692,
                 "y": 25.044239715406377
             }
         },
         "ready_map/decorative.tsx": {
             "scaleInDock": 1,
             "scaleInEditor": 4
+        },
+        "ready_map/end_room.tmx": {
+            "scale": 1,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 347.5,
+                "y": 237.5
+            }
         },
         "ready_map/horizontal_coridor.tmx": {
             "scale": 0.8002130681818181,
@@ -105,9 +113,9 @@
         },
         "ready_map/map1.tmx": {
             "scale": 0.75,
-            "selectedLayer": 0,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 352,
+                "x": 352.6666666666667,
                 "y": 351.33333333333337
             }
         },
@@ -115,16 +123,16 @@
             "scale": 0.75,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 324.6666666666667,
-                "y": 360.66666666666663
+                "x": 352.6666666666667,
+                "y": 352.66666666666663
             }
         },
         "ready_map/map3.tmx": {
             "scale": 0.8002130681818181,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 351.156474660513,
-                "y": 353.0309754149286
+                "x": 351.15647466051314,
+                "y": 354.28064258453895
             }
         },
         "ready_map/ready_map/mainlevbuild.tsx": {
@@ -143,7 +151,7 @@
             "selectedLayer": 0,
             "viewCenter": {
                 "x": 308.7719298245614,
-                "y": 44.75776597456951
+                "y": 45.89087397392569
             }
         },
         "ready_map/vertical_corridor.tmx": {
@@ -162,7 +170,7 @@
     "map.layerDataFormat": null,
     "map.tileHeight": 16,
     "map.tileWidth": 16,
-    "map.width": 2,
+    "map.width": 44,
     "mapScene.enableWorlds": true,
     "openFiles": [
         "ready_map/mainlevbuild.tsx",
@@ -174,13 +182,13 @@
     ],
     "project": "map.tiled-project",
     "recentFiles": [
+        "ready_map/top_wall.tmx",
         "ready_map/left_right_wall.tmx",
         "ready_map/bottom_wall.tmx",
         "ready_map/map3.tmx",
         "ready_map/map2.tmx",
         "ready_map/map1.tmx",
         "ready_map/mainlevbuild.tsx",
-        "ready_map/top_wall.tmx",
         "ready_map/horizontal_corridor.tmx",
         "ready_map/vertical_corridor.tmx",
         "ready_map/base_map_with_gates.tmx",

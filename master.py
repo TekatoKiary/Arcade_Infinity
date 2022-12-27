@@ -1,172 +1,80 @@
 import pygame
-import pytmx
 import random
-
-TILED_MAP_DIR = 'map\\ready_map'
-
-
-# Классы Room and Corridor будут потом наследоваться
-
-# комната 704*704
-# протяженность коридора 512 - 32
-def collide_rect(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2):
-    """Пересечение прямоугольников"""
-    # Создан для оптимизации отрисовки, то есть отрисовываются только те комнаты, которые находятся в экране,
-    # а не за ним
-    s1 = (ax1 >= bx1 and ax1 <= bx2) or (ax2 >= bx1 and ax2 <= bx2)
-    s2 = (ay1 >= by1 and ay1 <= by2) or (ay2 >= by1 and ay2 <= by2)
-    s3 = (bx1 >= ax1 and bx1 <= ax2) or (bx2 >= ax1 and bx2 <= ax2)
-    s4 = (by1 >= ay1 and by1 <= ay2) or (by2 >= ay1 and by2 <= ay2)
-    return True if ((s1 and s2) or (s3 and s4)) or ((s1 and s4) or (s3 and s2)) else False
-
-
-class Room:
-    def __init__(self, x, y):
-        self.map = pytmx.load_pygame(f'{TILED_MAP_DIR}\\map{random.randrange(1, 4)}.tmx')
-        self.x = x * (704 + 512)
-        self.y = y * (704 + 512)
-        self.height = self.map.height
-        self.width = self.map.width
-        self.tile_size = self.map.tilewidth
-        self.walls = []
-
-    def render(self, screen):
-        x1, y1, x2, y2 = self.rect_in_screen(self.width, self.height, 0, 0)
-        for y in range(y1, y2):
-            for x in range(x1, x2):
-                for layer in range(len(self.map.layers)):
-                    image = self.map.get_tile_image(x, y, layer)
-                    if image:
-                        screen.blit(image, (self.x + x * self.tile_size, self.y + y * self.tile_size))
-        # Еще в разработке
-        for wall in self.walls:
-            is_bottom = ((self.height - 3) * self.tile_size) if wall.filename.find(
-                'bottom') != -1 else 0  # если нижняя стена
-            # если правая стена:
-            is_right = ((self.width - 2) * self.tile_size) if wall.filename.find('right') != -1 else 0
-            x1, y1, x2, y2 = self.rect_in_screen(wall.width, wall.height, is_right, is_bottom)
-            for y in range(y1, y2):
-                for x in range(x1, x2):
-                    image = wall.get_tile_image(x, y, 0)
-                    if image:
-                        screen.blit(image,
-                                    (self.x + x * self.tile_size + is_right, self.y + y * self.tile_size + is_bottom))
-
-    def rect_in_screen(self, width_dec, height_dec, is_right, is_bottom):
-        """Возвращает начальные и конечные координаты ячеек комнаты, которые попадают на экран"""
-        # Без этой оптимизации процесс отрисовки был бы ОЧЕНЬ долгим и просаживался бы FPS
-        x = self.x + is_right  # Из-за нижней и правой стены придется делать так
-        y = self.y + is_bottom
-        x1 = max(0, x)
-        x2 = min(width, width_dec * self.tile_size + x)
-        x1 = 0 if x1 == x else (-x // self.tile_size)
-        x2 = width_dec if x2 == width_dec * self.tile_size + x \
-            else width_dec - (width_dec * self.tile_size + x - width) // self.tile_size
-        y1 = max(0, y)
-        y2 = min(height, height_dec * self.tile_size + y)
-        y1 = 0 if y1 == y else (-y // self.tile_size)
-        y2 = height_dec if y2 == height_dec * self.tile_size + y \
-            else height_dec - (height_dec * self.tile_size + y - height) // self.tile_size
-        return x1, y1, x2, y2
-
-    def move(self):
-        key = pygame.key.get_pressed()
-        if key[pygame.K_w] or key[pygame.K_UP]:
-            self.y += 10
-        if key[pygame.K_s] or key[pygame.K_DOWN]:
-            self.y -= 10
-        if key[pygame.K_a] or key[pygame.K_LEFT]:
-            self.x += 10
-        if key[pygame.K_d] or key[pygame.K_RIGHT]:
-            self.x -= 10
-
-    def set_walls(self, left, right, top, bottom):
-        walls = ['left' if left else 0, 'right' if right else 0, 'top' if top else 0, 'bottom' if bottom else 0]
-        for i in walls:
-            if i:
-                self.walls.append(pytmx.load_pygame(f'{TILED_MAP_DIR}\\{i}_wall.tmx'))
-
-
-class Corridor:
-    def __init__(self, x, y, orientation):
-        self.map = pytmx.load_pygame(f'{TILED_MAP_DIR}\\{orientation}_corridor.tmx')
-        self.x = x * (704 + 512)
-        self.y = y * (704 + 512)
-        if orientation == 'vertical':
-            self.y += 672
-        else:
-            self.x += 672
-        self.height = self.map.height
-        self.width = self.map.width
-        self.tile_size = self.map.tilewidth
-
-    def render(self, screen):
-        x1, y1, x2, y2 = self.rect_in_screen()
-        for y in range(y1, y2):
-            for x in range(x1, x2):
-                for layer in range(len(self.map.layers)):
-                    image = self.map.get_tile_image(x, y, layer)
-
-                    if image:
-                        screen.blit(image, (self.x + x * self.tile_size, self.y + y * self.tile_size))
-
-    def move(self):
-        key = pygame.key.get_pressed()
-        if key[pygame.K_w] or key[pygame.K_UP]:
-            self.y += 10
-        if key[pygame.K_s] or key[pygame.K_DOWN]:
-            self.y -= 10
-        if key[pygame.K_a] or key[pygame.K_LEFT]:
-            self.x += 10
-        if key[pygame.K_d] or key[pygame.K_RIGHT]:
-            self.x -= 10
-
-    def rect_in_screen(self):
-        """Возвращает начальные и конечные координаты ячеек комнаты, которые попадают на экран"""
-        # Без этой оптимизации процесс отрисовки был бы ОЧЕНЬ долгим и просаживался бы FPS
-        x1 = max(0, self.x)
-        x2 = min(width, self.width * self.tile_size + self.x)
-        x1 = 0 if x1 == self.x else (-self.x // self.tile_size)
-        x2 = self.width if x2 == self.width * self.tile_size + self.x \
-            else self.width - (self.width * self.tile_size + self.x - width) // self.tile_size
-        y1 = max(0, self.y)
-        y2 = min(height, self.height * self.tile_size + self.y)
-        y1 = 0 if y1 == self.y else (-self.y // self.tile_size)
-        y2 = self.height if y2 == self.height * self.tile_size + self.y \
-            else self.width - (self.width * self.tile_size + self.y - width) // self.tile_size
-        return x1, y1, x2, y2
+from others import WIDTH, HEIGHT, SIZE, collide_rect
+from room import Room, Corridor
 
 
 class Labyrinth:
     def __init__(self):
-        self.count_room = random.randrange(1, 4)  # кол-во комнат в уровне,
-        # без учета первой комнаты, комнаты с врагами(их 2) и последней комнаты
+
         self.map_list = list([0] * 4 for _ in range(4))
 
         self.rooms = []
         self.corridors = []
+        self.create_rooms()
+        print(*self.map_list, sep='\n')
 
+    def create_rooms(self):
+        self.count_room = random.randrange(1, 4)  # кол-во доп комнат в уровне,
+        # то есть без учета первой комнаты, комнаты с врагами(их 2) и последней комнаты
+        coords_all_room = []  # список координат комнат
+        coords_hor_cor = []  # список координат горизонтальных коридоров
+        coords_ver_cor = []  # список координат вертикальных коридоров
         x, y = random.randrange(4), random.randrange(4)
-        room = Room(x, y)
+        room = Room(x, y, f'begin_room')
+        coords_all_room.append((x, y))
         self.map_list[y][x] = room
         self.rooms.append(room)
-
         for i in range(3):  # создание основной цепи комнат, то есть те комнаты, которые должны пройти
+            d = [(0, -1), (0, 1), (1, 0), (-1, 0)]
             while 1:
-                kx, ky = random.choice([(0, -1), (0, 1), (1, 0), (-1, 0)])
+                kx, ky = random.choice(d)
                 if 4 > x + kx >= 0 and 4 > y + ky >= 0 and not self.map_list[y + ky][x + kx]:
                     if kx:
                         self.corridors.append(Corridor(min(x, x + kx), y, 'horizontal'))
+                        coords_hor_cor.append((min(x, x + kx), y))
                     else:
                         self.corridors.append(Corridor(x, min(y, y + ky), 'vertical'))
+                        coords_ver_cor.append((x, min(y, y + ky)))
                     x, y = x + kx, y + ky
-                    room = Room(x, y)
-                    room.set_walls(random.randrange(2), random.randrange(2), random.randrange(2), random.randrange(2))
+                    room = Room(x, y, f'map{random.randrange(1, 4)}') if i < 2 else Room(x, y, f'end_room')
                     self.map_list[y][x] = room
                     self.rooms.append(room)
-
+                    coords_all_room.append((x, y))
                     break
-        print(*self.map_list, sep='\n')
+                else:
+                    del d[d.index((kx, ky))]
+        while self.count_room != 0:  # создание доп комнат
+            x, y = random.randrange(4), random.randrange(4)
+            if not self.map_list[y][x]:
+                for kx, ky in [(0, -1), (0, 1), (1, 0), (-1, 0)]:
+                    if 4 > x + kx >= 0 and 4 > y + ky >= 0 and self.map_list[y + ky][x + kx] \
+                            and self.rooms[0] != self.map_list[y + ky][x + kx] and \
+                            self.rooms[3] != self.map_list[y + ky][x + kx]:
+                        room = Room(x, y, f'map{random.randrange(1, 4)}')
+                        self.map_list[y][x] = room
+                        self.rooms.append(room)
+                        coords_all_room.append((x, y))
+                        if kx:
+                            self.corridors.append(Corridor(min(x, x + kx), y, 'horizontal'))
+                            coords_hor_cor.append((min(x, x + kx), y))
+                        else:
+                            self.corridors.append(Corridor(x, min(y, y + ky), 'vertical'))
+                            coords_ver_cor.append((x, min(y, y + ky)))
+                        break
+                if self.map_list[y][x]:
+                    self.count_room -= 1
+        for x, y in coords_all_room:  # вместо того чтобы просто пройтись по self.map_list лучше это
+            walls = []
+            for kx, ky in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                # Последние два условия проверяет на наличие коридоров между ними
+                if 4 > x + kx >= 0 and 4 > y + ky >= 0 and self.map_list[y + ky][x + kx] and \
+                        (kx == 0 or (min(x, kx + x), y) in coords_hor_cor) and \
+                        (ky == 0 or (x, min(y, ky + y)) in coords_ver_cor):
+                    walls.append(0)
+                else:
+                    walls.append(1)
+            self.map_list[y][x].set_walls(*walls)
 
     def update(self, screen):
         for room in self.rooms:
@@ -176,19 +84,18 @@ class Labyrinth:
                             room.y + room.height * room.tile_size):
                 room.render(screen)
 
-        # for corridor in self.corridors:
-        #     corridor.move()
-        #     if collide_rect(0, 0, width, height,
-        #                     corridor.x, corridor.y, corridor.x + corridor.width * corridor.tile_size,
-        #                     corridor.y + corridor.height * corridor.tile_size):
-        #         corridor.render(screen)
+        for corridor in self.corridors:
+            corridor.move()
+            if collide_rect(0, 0, WIDTH, HEIGHT,
+                            corridor.x, corridor.y, corridor.x + corridor.width * corridor.tile_size,
+                            corridor.y + corridor.height * corridor.tile_size):
+                corridor.render(screen)
 
 
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('Game')
-    size = width, height = 600, 600  # скорее всего изменится
-    screen = pygame.display.set_mode(size)
+    screen = pygame.display.set_mode(SIZE)
     # pygame.FULLSCREEN | pygame.DOUBLEBUF
     clock = pygame.time.Clock()
     FPS = 60
