@@ -3,7 +3,6 @@
 import pygame
 import os
 import random
-import player
 import math
 import time
 
@@ -44,14 +43,18 @@ class Player(pygame.sprite.Sprite):
     def on_clicked(self, event):
         if event.button == 1:
             self.active_gun.try_shoot()
+    
+    def drop_gun(self):
+        pass
 
 
 class Gun(pygame.sprite.Sprite):
-    def __init__(self, center_pos, image, damage_type='point', damage=0, splash_damage=0, splash_radius=0, ammo=10, reload_time=3000, reload_event=1):
+    def __init__(self, center_pos, image, damage_type='point', bullet_color=(128, 128, 128), damage=0, splash_damage=0, splash_radius=0, ammo=10, reload_time=3000, reload_event=1):
         super().__init__(all_sprites)
         self.add(gun_sprites)
 
         # Их не изменять
+        self.bullet_color = bullet_color
         self.damage_type = damage
         self.damage = damage
         self.splash_damage = splash_damage
@@ -125,7 +128,7 @@ class Gun(pygame.sprite.Sprite):
 
 class Bullet(pygame.sprite.Sprite):
     # damage_type: point, splash
-    def __init__(self, gun, cords_from=(0, 0), cords_to=(0, 0)):
+    def __init__(self, gun, cords_from=(0, 0), cords_to=(0, 0), width=10, height=10):
         super().__init__(all_sprites)
 
         self.gun = gun
@@ -134,20 +137,26 @@ class Bullet(pygame.sprite.Sprite):
 
         self.cords = [self.cords_from[0], self.cords_from[1]]
 
-        self.image = pygame.Surface((10, 10), pygame.SRCALPHA, 32)
+        self.width = width
+        self.height = height
+        self.image = pygame.Surface((self.width, self.height), pygame.SRCALPHA, 32)
         self.rect = self.image.get_rect()
         self.rect.x = self.cords_from[0]
         self.rect.y = self.cords_from[1]
-        pygame.draw.rect(self.image, (128, 128, 128), (0, 0, 10, 10), 0)
+        pygame.draw.rect(self.image, self.gun.bullet_color, (0, 0, self.width, self.height), 0)
 
-        self.move()
+        self.vx, self.vy = self.math_speed()
+        self.rotate()
 
     def math_angle(self):
-        rel_x, rel_y = mouse_pos[0] - self.cord_x - \
-            self.img_width / 2, mouse_pos[1] - \
-            self.cord_y - self.img_height / 2
+        rel_x, rel_y = mouse_pos[0] - self.rect.x - \
+            self.width / 2, mouse_pos[1] - \
+            self.rect.y - self.height / 2
         angle = (180 / math.pi) * math.atan2(rel_x, rel_y)
         return angle
+    
+    def rotate(self):
+        self.image = pygame.transform.rotate(self.image, self.math_angle())
 
     def math_speed(self):
         rel_x, rel_y = self.cords_to[0] - self.cords_from[0] - \
@@ -161,11 +170,12 @@ class Bullet(pygame.sprite.Sprite):
         return (vx, vy)
 
     def move(self):
-        vx, vy = self.math_speed()
+        self.cords[0] += self.vx / 60
+        self.cords[1] += self.vy / 60
 
-        self.cords[0] += vx / 60
-        self.cords[1] += vy / 60
-
+    def collision_handling(self):
+        pass
+    
     def update(self):
         self.move()
 
@@ -173,9 +183,6 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.y = self.cords[1]
 
         self.collision_handling()
-
-    def collision_handling(self):
-        pass
     
 
 
