@@ -16,14 +16,41 @@ class RoomCorridor:
         self.width = self.map.width
         self.tile_size = self.map.tilewidth
 
-    def render(self, screen):
+    def render(self, screen, x_speed, y_speed, player):
         x1, y1, x2, y2 = self.rect_in_screen(self.x, self.y, self.width, self.height)
         for y in range(y1, y2):
             for x in range(x1, x2):
-                for layer in range(len(self.map.layers)):
+                for layer in range(len(self.map.layers) - 1):
                     image = self.map.get_tile_image(x, y, layer)
                     if image:
                         screen.blit(image, (self.x + x * self.tile_size, self.y + y * self.tile_size))
+                        if layer == 1 and x and y:
+                            # Можно сказать, создаем спрайт ячейки для проверки коллизии
+                            cell = pygame.sprite.Sprite()
+                            cell.image = image
+                            cell.rect = image.get_rect()
+                            cell.rect.x = self.x + x * self.tile_size
+                            cell.rect.y = self.y + y * self.tile_size
+
+                            cell.rect.x = cell.rect.x - x_speed
+                            if pygame.sprite.collide_rect(cell, player):
+                                x_speed = 0
+                            cell.rect.x = cell.rect.x + x_speed
+                            cell.rect.y = cell.rect.y - y_speed
+                            if pygame.sprite.collide_rect(cell, player):
+                                y_speed = 0
+                            cell.kill()
+                            # Пока коллизии на прикладных стен нет
+        return x_speed, y_speed
+
+    def render_passing_walls(self, screen):
+        x1, y1, x2, y2 = self.rect_in_screen(self.x, self.y, self.width, self.height)
+
+        for y in range(y1, y2):
+            for x in range(x1, x2):
+                image = self.map.get_tile_image(x, y, len(self.map.layers) - 1)
+                if image:
+                    screen.blit(image, (self.x + x * self.tile_size, self.y + y * self.tile_size))
 
     def rect_in_screen(self, x, y, width_dec, height_dec):
         """Возвращает начальные и конечные координаты ячеек комнаты, которые попадают на экран"""
@@ -40,16 +67,9 @@ class RoomCorridor:
             else height_dec - (height_dec * self.tile_size + y - HEIGHT) // self.tile_size
         return x1, y1, x2, y2
 
-    def move(self):
-        key = pygame.key.get_pressed()
-        if key[pygame.K_w] or key[pygame.K_UP]:
-            self.y += 10
-        if key[pygame.K_s] or key[pygame.K_DOWN]:
-            self.y -= 10
-        if key[pygame.K_a] or key[pygame.K_LEFT]:
-            self.x += 10
-        if key[pygame.K_d] or key[pygame.K_RIGHT]:
-            self.x -= 10
+    def move(self, x, y):
+        self.x -= x
+        self.y -= y
 
 
 class Room(RoomCorridor):
@@ -57,8 +77,8 @@ class Room(RoomCorridor):
         super(Room, self).__init__(x, y, filename)
         self.walls = []
 
-    def render(self, screen):
-        super(Room, self).render(screen)
+    def render_passing_walls(self, screen):
+        super(Room, self).render_passing_walls(screen)
         for wall in self.walls:
             is_bottom = ((self.height - 3) * self.tile_size) if wall.filename.find(
                 'bottom') != -1 else 0  # если нижняя стена

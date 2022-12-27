@@ -1,6 +1,6 @@
 import pygame
 import random
-from others import WIDTH, HEIGHT, SIZE, collide_rect
+from others import WIDTH, HEIGHT, SIZE, collide_rect, FPS
 from room import Room, Corridor
 
 
@@ -81,19 +81,34 @@ class Labyrinth:
             self.map_list[y][x].set_walls(*walls)
 
     def update(self, screen):
+        x, y = move()
         for room in self.rooms:
-            room.move()
             if collide_rect(0, 0, 1360, 780,
                             room.x, room.y, room.x + room.width * room.tile_size,
                             room.y + room.height * room.tile_size):
-                room.render(screen)
-
+                x, y = room.render(screen, x, y, player)
         for corridor in self.corridors:
-            corridor.move()
             if collide_rect(0, 0, WIDTH, HEIGHT,
                             corridor.x, corridor.y, corridor.x + corridor.width * corridor.tile_size,
                             corridor.y + corridor.height * corridor.tile_size):
-                corridor.render(screen)
+                x, y = corridor.render(screen, x, y, player)
+        player.draw()
+
+        for room in self.rooms:
+            if collide_rect(0, 0, 1360, 780,
+                            room.x, room.y, room.x + room.width * room.tile_size,
+                            room.y + room.height * room.tile_size):
+                room.render_passing_walls(screen)
+
+        for corridor in self.corridors:
+            if collide_rect(0, 0, WIDTH, HEIGHT,
+                            corridor.x, corridor.y, corridor.x + corridor.width * corridor.tile_size,
+                            corridor.y + corridor.height * corridor.tile_size):
+                corridor.render_passing_walls(screen)
+        player.move()
+        if x or y:
+            [i.move(x, y) for i in self.rooms]
+            [i.move(x, y) for i in self.corridors]
 
 
 class Player(pygame.sprite.Sprite):
@@ -101,20 +116,36 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, ):
         super(Player, self).__init__()
         self.image = pygame.Surface((50, 50), pygame.SRCALPHA, 32)
+        self.image.get_rect()
+
         self.x = WIDTH // 2
         self.y = HEIGHT // 2
+        self.rect = self.image.get_rect()
+        self.rect.x = WIDTH // 2
+        self.rect.y = HEIGHT // 2
+        self.mask = pygame.mask.from_surface(self.image)
+        pygame.draw.rect(screen, (255, 191, 0), (self.x, self.y, *self.image.get_size()))
+
+    def draw(self):
         pygame.draw.rect(screen, (255, 191, 0), (self.x, self.y, *self.image.get_size()))
 
     def move(self):
-        key = pygame.key.get_pressed()
-        if key[pygame.K_w] or key[pygame.K_UP]:
-            self.y += 10
-        if key[pygame.K_s] or key[pygame.K_DOWN]:
-            self.y -= 10
-        if key[pygame.K_a] or key[pygame.K_LEFT]:
-            self.x += 10
-        if key[pygame.K_d] or key[pygame.K_RIGHT]:
-            self.x -= 10
+        self.x = WIDTH // 2
+        self.y = HEIGHT // 2
+
+
+def move():
+    key = pygame.key.get_pressed()
+    x, y = 0, 0
+    if key[pygame.K_w] or key[pygame.K_UP]:
+        y = -10
+    if key[pygame.K_s] or key[pygame.K_DOWN]:
+        y = 10
+    if key[pygame.K_a] or key[pygame.K_LEFT]:
+        x = -10
+    if key[pygame.K_d] or key[pygame.K_RIGHT]:
+        x = 10
+    return x, y
 
 
 if __name__ == '__main__':
@@ -123,7 +154,7 @@ if __name__ == '__main__':
     screen = pygame.display.set_mode(SIZE)
     # pygame.FULLSCREEN | pygame.DOUBLEBUF
     clock = pygame.time.Clock()
-    FPS = 60
+
     running = 1
     lab = Labyrinth()
     player = Player()
@@ -132,7 +163,6 @@ if __name__ == '__main__':
             if event.type == pygame.QUIT:
                 running = False
         screen.fill((0, 0, 0))
-        player.move()
         lab.update(screen)
         pygame.display.update()
         clock.tick(FPS)

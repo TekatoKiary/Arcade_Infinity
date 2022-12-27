@@ -3,10 +3,10 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "ready_map/mainlevbuild.tsx",
+    "activeFile": "ready_map/map1.tmx",
     "expandedProjectPaths": [
-        ".",
-        "ready_map"
+        "ready_map",
+        "."
     ],
     "file.lastUsedOpenFilter": "Все файлы (*)",
     "fileStates": {
@@ -59,16 +59,16 @@
             "scale": 0.8002130681818181,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 500.49170142895184,
-                "y": 25.618176977012524
+                "x": 146.83589242921812,
+                "y": 349.2819739060975
             }
         },
         "ready_map/bottom_wall.tmx": {
-            "scale": 0.778622159090909,
+            "scale": 3,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 866.2738301559793,
-                "y": 18.622639788379104
+                "x": 430.99999999999994,
+                "y": -14.166666666666671
             }
         },
         "ready_map/decorative.tsx": {
@@ -79,8 +79,8 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 383.5,
-                "y": 148.5
+                "x": 446.5,
+                "y": 156.5
             }
         },
         "ready_map/horizontal_coridor.tmx": {
@@ -95,7 +95,7 @@
             "scale": 0.626736111111111,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 782.6260387811635,
+                "x": 450.74792243767314,
                 "y": 104.5096952908587
             }
         },
@@ -121,26 +121,26 @@
         },
         "ready_map/map1.tmx": {
             "scale": 0.5,
-            "selectedLayer": 2,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 111,
-                "y": 427
+                "x": 281,
+                "y": 275
             }
         },
         "ready_map/map2.tmx": {
             "scale": 0.75,
-            "selectedLayer": 4,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 93.99999999999999,
-                "y": 318
+                "x": 377.99999999999994,
+                "y": 440.66666666666663
             }
         },
         "ready_map/map3.tmx": {
             "scale": 0.8002130681818181,
-            "selectedLayer": 2,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 200.57158072246386,
-                "y": 455.50368332297865
+                "x": 373.02565012869445,
+                "y": 264.30460637259256
             }
         },
         "ready_map/ready_map/mainlevbuild.tsx": {
@@ -150,16 +150,16 @@
             "scale": 0.8002130681818181,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 16.87050678973992,
-                "y": 353.0309754149286
+                "x": 16.870506789739977,
+                "y": 354.28064258453895
             }
         },
         "ready_map/room_with_chess.tmx": {
             "scale": 0.75,
-            "selectedLayer": 2,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 178.66666666666669,
-                "y": 350
+                "x": 356.66666666666663,
+                "y": 360.66666666666663
             }
         },
         "ready_map/top_wall.tmx": {
@@ -172,10 +172,10 @@
         },
         "ready_map/vertical_corridor.tmx": {
             "scale": 0.9780381944444444,
-            "selectedLayer": 0,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 64.41466228809799,
-                "y": 288.84352533948703
+                "x": 2.5561373923848123,
+                "y": 410.5156652170054
             }
         }
     },
@@ -190,26 +190,31 @@
     "mapScene.enableWorlds": true,
     "openFiles": [
         "ready_map/mainlevbuild.tsx",
-        "ready_map/map1.tmx",
-        "ready_map/left_right_wall.tmx",
-        "ready_map/map2.tmx",
-        "ready_map/map3.tmx",
-        "ready_map/bottom_wall.tmx"
-    ],
-    "project": "map.tiled-project",
-    "recentFiles": [
-        "ready_map/top_wall.tmx",
-        "ready_map/map1.tmx",
-        "ready_map/end_room.tmx",
         "ready_map/begin_room.tmx",
-        "ready_map/horizontal_corridor.tmx",
+        "ready_map/map1.tmx",
         "ready_map/map2.tmx",
         "ready_map/map3.tmx",
         "ready_map/bottom_wall.tmx",
+        "ready_map/room_with_chess.tmx",
+        "ready_map/end_room.tmx",
+        "ready_map/horizontal_corridor.tmx",
         "ready_map/vertical_corridor.tmx",
-        "ready_map/left_right_wall.tmx",
+        "ready_map/right_wall.tmx"
+    ],
+    "project": "map.tiled-project",
+    "recentFiles": [
         "ready_map/mainlevbuild.tsx",
-        "ready_map/base_map_with_gates.tmx"
+        "ready_map/begin_room.tmx",
+        "ready_map/right_wall.tmx",
+        "ready_map/vertical_corridor.tmx",
+        "ready_map/horizontal_corridor.tmx",
+        "ready_map/end_room.tmx",
+        "ready_map/room_with_chess.tmx",
+        "ready_map/bottom_wall.tmx",
+        "ready_map/map3.tmx",
+        "ready_map/map2.tmx",
+        "ready_map/map1.tmx",
+        "ready_map/top_wall.tmx"
     ],
     "tileset.lastUsedFormat": "tsx",
     "tileset.spacing": 0,
