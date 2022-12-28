@@ -24,23 +24,10 @@ class RoomCorridor:
                     image = self.map.get_tile_image(x, y, layer)
                     if image:
                         screen.blit(image, (self.x + x * self.tile_size, self.y + y * self.tile_size))
-                        if layer == 1 and x and y:
-                            # Можно сказать, создаем спрайт ячейки для проверки коллизии
-                            cell = pygame.sprite.Sprite()
-                            cell.image = image
-                            cell.rect = image.get_rect()
-                            cell.rect.x = self.x + x * self.tile_size
-                            cell.rect.y = self.y + y * self.tile_size
-
-                            cell.rect.x = cell.rect.x - x_speed
-                            if pygame.sprite.collide_rect(cell, player):
-                                x_speed = 0
-                            cell.rect.x = cell.rect.x + x_speed
-                            cell.rect.y = cell.rect.y - y_speed
-                            if pygame.sprite.collide_rect(cell, player):
-                                y_speed = 0
-                            cell.kill()
-                            # Пока коллизии на прикладных стен нет
+                        if layer == 1 and any([x_speed, y_speed]):
+                            x_speed, y_speed = self.is_collising(player, image,
+                                                                 self.x + x * self.tile_size,
+                                                                 self.y + y * self.tile_size, x_speed, y_speed)
         return x_speed, y_speed
 
     def render_passing_walls(self, screen):
@@ -71,13 +58,33 @@ class RoomCorridor:
         self.x -= x
         self.y -= y
 
+    def is_collising(self, player, image, x, y, x_speed, y_speed):
+        # Можно сказать, создаем спрайт ячейки для проверки коллизии
+        cell = pygame.sprite.Sprite()
+        cell.image = image
+        cell.rect = image.get_rect()
+        cell.rect.x = x
+        cell.rect.y = y
+
+        cell.rect.x = cell.rect.x - x_speed
+        if pygame.sprite.collide_rect(cell, player):
+            cell.rect.x = cell.rect.x + x_speed
+            x_speed = 0
+        else:
+            cell.rect.x = cell.rect.x + x_speed
+        cell.rect.y = cell.rect.y - y_speed
+        if pygame.sprite.collide_rect(cell, player):
+            y_speed = 0
+        cell.kill()  # утечка памяти
+        return x_speed, y_speed
+
 
 class Room(RoomCorridor):
     def __init__(self, x, y, filename):
         super(Room, self).__init__(x, y, filename)
         self.walls = []
 
-    def render_passing_walls(self, screen):
+    def render_passing_walls(self, screen, x_speed, y_speed, player):
         super(Room, self).render_passing_walls(screen)
         for wall in self.walls:
             is_bottom = ((self.height - 3) * self.tile_size) if wall.filename.find(
@@ -93,6 +100,12 @@ class Room(RoomCorridor):
                             screen.blit(image,
                                         (self.x + x * self.tile_size + is_right,
                                          self.y + y * self.tile_size + is_bottom))
+                            if layer == 0 and any([x_speed, y_speed]):
+                                x_speed, y_speed = self.is_collising(player, image,
+                                                                     self.x + x * self.tile_size + is_right,
+                                                                     self.y + y * self.tile_size + is_bottom,
+                                                                     x_speed, y_speed)
+        return x_speed, y_speed
 
     def set_walls(self, left, right, top, bottom):
         self.walls = []

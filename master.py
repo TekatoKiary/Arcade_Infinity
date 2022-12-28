@@ -98,7 +98,7 @@ class Labyrinth:
             if collide_rect(0, 0, 1360, 780,
                             room.x, room.y, room.x + room.width * room.tile_size,
                             room.y + room.height * room.tile_size):
-                room.render_passing_walls(screen)
+                x, y = room.render_passing_walls(screen, x, y, player)
 
         for corridor in self.corridors:
             if collide_rect(0, 0, WIDTH, HEIGHT,
@@ -115,14 +115,11 @@ class Player(pygame.sprite.Sprite):
     # Временно
     def __init__(self, ):
         super(Player, self).__init__()
-        self.image = pygame.Surface((50, 50), pygame.SRCALPHA, 32)
+        self.image = pygame.Surface((25, 50), pygame.SRCALPHA, 32)
         self.image.get_rect()
-
-        self.x = WIDTH // 2
-        self.y = HEIGHT // 2
         self.rect = self.image.get_rect()
-        self.rect.x = WIDTH // 2
-        self.rect.y = HEIGHT // 2
+        self.rect.x = self.x = WIDTH // 2
+        self.rect.y = self.y = HEIGHT // 2
         self.mask = pygame.mask.from_surface(self.image)
         pygame.draw.rect(screen, (255, 191, 0), (self.x, self.y, *self.image.get_size()))
 
