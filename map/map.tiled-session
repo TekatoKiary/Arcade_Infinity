@@ -59,7 +59,7 @@
             "scale": 0.8002130681818181,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 103.09754149285527,
+                "x": 476.74802520635495,
                 "y": 301.79462146090356
             }
         },
@@ -129,7 +129,7 @@
         },
         "ready_map/map2.tmx": {
             "scale": 0.5,
-            "selectedLayer": 2,
+            "selectedLayer": 1,
             "viewCenter": {
                 "x": 471,
                 "y": 415

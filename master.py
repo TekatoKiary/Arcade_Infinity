@@ -1,6 +1,6 @@
 import pygame
 import random
-from others import WIDTH, HEIGHT, SIZE, collide_rect, FPS
+from others import WIDTH, HEIGHT, SIZE, collide_rect, FPS, load_image
 from room import Room, Corridor
 
 
@@ -115,20 +115,21 @@ class Player(pygame.sprite.Sprite):
     # Временно
     def __init__(self, ):
         super(Player, self).__init__()
-        self.image = pygame.Surface((25, 50), pygame.SRCALPHA, 32)
+        self.image = load_image('Adventurer\\adventurer_stand.png', -1)
+        self.image = pygame.transform.scale(self.image,
+                                            (self.image.get_rect().width * 3, self.image.get_rect().height * 3))
         self.image.get_rect()
         self.rect = self.image.get_rect()
         self.rect.x = self.x = WIDTH // 2
         self.rect.y = self.y = HEIGHT // 2
         self.mask = pygame.mask.from_surface(self.image)
-        pygame.draw.rect(screen, (255, 191, 0), (self.x, self.y, *self.image.get_size()))
 
     def draw(self):
-        pygame.draw.rect(screen, (255, 191, 0), (self.x, self.y, *self.image.get_size()))
+        screen.blit(self.image, self.rect)
 
     def move(self):
-        self.x = WIDTH // 2
-        self.y = HEIGHT // 2
+        self.x = WIDTH // 2 - self.rect.width // 2
+        self.y = HEIGHT // 2 - self.rect.height // 2
 
 
 def move():
