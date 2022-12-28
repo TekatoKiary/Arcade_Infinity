@@ -18,13 +18,18 @@ class Labyrinth:
         count_room = random.randrange(1, 4)
         # кол-во доп комнат в уровне,
         # то есть без учета первой комнаты, комнаты с врагами(их 2) и последней комнаты
-        chess_room = random.randrange(count_room)
+        chest_room = random.randrange(count_room)
         coords_all_room = []  # список координат комнат
         coords_hor_cor = []  # список координат горизонтальных коридоров
         coords_ver_cor = []  # список координат вертикальных коридоров
+
         x, y = random.randrange(4), random.randrange(4)
         room = Room(x, y, f'begin_room')
         coords_all_room.append((x, y))
+
+        x_move = room.x + (-WIDTH + room.tile_size * room.width) // 2
+        y_move = room.y + (-HEIGHT + room.tile_size * room.height) // 2
+
         self.map_list[y][x] = room
         self.rooms.append(room)
         for i in range(3):  # создание основной цепи комнат, то есть те комнаты, которые должны пройти
@@ -55,7 +60,7 @@ class Labyrinth:
                             and self.rooms[0] != self.map_list[y + ky][x + kx] and \
                             self.rooms[3] != self.map_list[y + ky][x + kx]:
                         room = Room(x, y,
-                                    f'map{random.randrange(1, 4)}' if chess_room == count_room else 'room_with_chess')
+                                    f'map{random.randrange(1, 4)}' if chest_room == count_room else 'room_with_chest')
                         self.map_list[y][x] = room
                         self.rooms.append(room)
                         coords_all_room.append((x, y))
@@ -79,6 +84,8 @@ class Labyrinth:
                 else:
                     walls.append(1)
             self.map_list[y][x].set_walls(*walls)
+        [i.move(x_move, y_move) for i in self.rooms]
+        [i.move(x_move, y_move) for i in self.corridors]
 
     def update(self, screen):
         x, y = move()
@@ -99,12 +106,12 @@ class Labyrinth:
                             room.x, room.y, room.x + room.width * room.tile_size,
                             room.y + room.height * room.tile_size):
                 x, y = room.render_passing_walls(screen, x, y, player)
-
         for corridor in self.corridors:
             if collide_rect(0, 0, WIDTH, HEIGHT,
                             corridor.x, corridor.y, corridor.x + corridor.width * corridor.tile_size,
                             corridor.y + corridor.height * corridor.tile_size):
-                corridor.render_passing_walls(screen)
+                corridor.render_passing_walls(screen, player)
+
         player.move()
         if x or y:
             [i.move(x, y) for i in self.rooms]
@@ -117,8 +124,7 @@ class Player(pygame.sprite.Sprite):
         super(Player, self).__init__()
         self.image = load_image('Adventurer\\adventurer_stand.png', -1)
         self.image = pygame.transform.scale(self.image,
-                                            (self.image.get_rect().width * 3, self.image.get_rect().height * 3))
-        self.image.get_rect()
+                                            (self.image.get_rect().width * 2.5, self.image.get_rect().height * 2.5))
         self.rect = self.image.get_rect()
         self.rect.x = self.x = WIDTH // 2
         self.rect.y = self.y = HEIGHT // 2
@@ -128,8 +134,8 @@ class Player(pygame.sprite.Sprite):
         screen.blit(self.image, self.rect)
 
     def move(self):
-        self.x = WIDTH // 2 - self.rect.width // 2
-        self.y = HEIGHT // 2 - self.rect.height // 2
+        self.rect.x = self.x = WIDTH // 2 - self.rect.width // 2
+        self.rect.y = self.y = HEIGHT // 2 - self.rect.height // 2
 
 
 def move():
