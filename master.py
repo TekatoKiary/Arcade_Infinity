@@ -1,6 +1,8 @@
 import pygame
 import random
-from others import WIDTH, HEIGHT, SIZE, collide_rect, FPS, load_image
+
+import others
+from others import collide_rect, FPS, load_image
 from room import Room, Corridor
 
 
@@ -27,8 +29,8 @@ class Labyrinth:
         room = Room(x, y, f'begin_room')
         coords_all_room.append((x, y))
 
-        x_move = room.x + (-WIDTH + room.tile_size * room.width) // 2
-        y_move = room.y + (-HEIGHT + room.tile_size * room.height) // 2
+        x_move = room.x + (-others.WIDTH + room.tile_size * room.width) // 2
+        y_move = room.y + (-others.HEIGHT + room.tile_size * room.height) // 2
 
         self.map_list[y][x] = room
         self.rooms.append(room)
@@ -60,7 +62,7 @@ class Labyrinth:
                             and self.rooms[0] != self.map_list[y + ky][x + kx] and \
                             self.rooms[3] != self.map_list[y + ky][x + kx]:
                         room = Room(x, y,
-                                    f'map{random.randrange(1, 4)}' if chest_room == count_room else 'room_with_chest')
+                                    f'map{random.randrange(1, 4)}' if chest_room != count_room else 'room_with_chest')
                         self.map_list[y][x] = room
                         self.rooms.append(room)
                         coords_all_room.append((x, y))
@@ -90,24 +92,24 @@ class Labyrinth:
     def update(self, screen):
         x, y = move()
         for room in self.rooms:
-            if collide_rect(0, 0, 1360, 780,
+            if collide_rect(0, 0, others.WIDTH, others.HEIGHT,
                             room.x, room.y, room.x + room.width * room.tile_size,
                             room.y + room.height * room.tile_size):
                 x, y = room.render(screen, x, y, player)
         for corridor in self.corridors:
-            if collide_rect(0, 0, WIDTH, HEIGHT,
+            if collide_rect(0, 0, others.WIDTH, others.HEIGHT,
                             corridor.x, corridor.y, corridor.x + corridor.width * corridor.tile_size,
                             corridor.y + corridor.height * corridor.tile_size):
                 x, y = corridor.render(screen, x, y, player)
         player.draw()
-
         for room in self.rooms:
-            if collide_rect(0, 0, 1360, 780,
+            if collide_rect(0, 0, others.WIDTH, others.HEIGHT,
                             room.x, room.y, room.x + room.width * room.tile_size,
                             room.y + room.height * room.tile_size):
                 x, y = room.render_passing_walls(screen, x, y, player)
+
         for corridor in self.corridors:
-            if collide_rect(0, 0, WIDTH, HEIGHT,
+            if collide_rect(0, 0, others.WIDTH, others.HEIGHT,
                             corridor.x, corridor.y, corridor.x + corridor.width * corridor.tile_size,
                             corridor.y + corridor.height * corridor.tile_size):
                 corridor.render_passing_walls(screen, player)
@@ -126,16 +128,16 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image,
                                             (self.image.get_rect().width * 2.5, self.image.get_rect().height * 2.5))
         self.rect = self.image.get_rect()
-        self.rect.x = self.x = WIDTH // 2
-        self.rect.y = self.y = HEIGHT // 2
+        self.rect.x = self.x = others.WIDTH // 2
+        self.rect.y = self.y = others.HEIGHT // 2
         self.mask = pygame.mask.from_surface(self.image)
 
     def draw(self):
         screen.blit(self.image, self.rect)
 
     def move(self):
-        self.rect.x = self.x = WIDTH // 2 - self.rect.width // 2
-        self.rect.y = self.y = HEIGHT // 2 - self.rect.height // 2
+        self.rect.x = self.x = others.WIDTH // 2 - self.rect.width // 2
+        self.rect.y = self.y = others.HEIGHT // 2 - self.rect.height // 2
 
 
 def move():
@@ -155,7 +157,7 @@ def move():
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('Game')
-    screen = pygame.display.set_mode(SIZE)
+    screen = pygame.display.set_mode(others.SIZE)
     # pygame.FULLSCREEN | pygame.DOUBLEBUF
     clock = pygame.time.Clock()
 
