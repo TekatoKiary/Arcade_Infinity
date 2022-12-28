@@ -66,13 +66,14 @@ class Player(pygame.sprite.Sprite):
 
 
 class Gun(pygame.sprite.Sprite):
-    def __init__(self, center_pos, image, immortal_bullet=False, damage_type='point', bullet_color=(128, 128, 128), bullet_size=(10, 10), bullet_speed=300, fire_rate=300, \
+    def __init__(self, center_pos, image, destroy_bullets=True, damage_type='point', bullet_color=(128, 128, 128), bullet_size=(10, 10), bullet_speed=300, fire_rate=300, \
         damage=0, splash_damage=0, splash_radius=0, ammo=10, reload_time=3000, reload_event=1, shoot_event=2):
 
         super().__init__(all_sprites)
         self.add(gun_sprites)
 
         # Их не изменять
+        self.destroy_bullets = destroy_bullets
         self.bullet_color = bullet_color
         self.bullet_size = bullet_size
         self.bullet_speed = bullet_speed
@@ -197,7 +198,7 @@ class Bullet(pygame.sprite.Sprite):
         self.cords[1] += self.vy / 60
 
     def collision_handling(self):
-        colides = pygame.sprite.groupcollide(bullet_group, colide_group, True, False)
+        colides = pygame.sprite.groupcollide(bullet_group, collide_group, self.gun.destroy_bullets, False)
         for bullet, sprites in colides.items():
             for sprite in sprites:
                 sprite.hp_left -= bullet.gun.damage
@@ -216,7 +217,7 @@ class Monster(pygame.sprite.Sprite):
     def __init__(self, center_pos, image, hp=100):
         super().__init__(all_sprites)
         self.add(monster_sprites)
-        self.add(colide_group)
+        self.add(collide_group)
 
         self.active_gun = Hands()
 
@@ -237,10 +238,17 @@ class Monster(pygame.sprite.Sprite):
         self.cord_y = self.rect.y
         self.width = self.image.get_width()
         self.height = self.image.get_height()
+    
+    def respawn(self):
+        self.hp_left = self.max_hp
+        self.add(all_sprites, collide_group, monster_sprites)
+        dead_monsters.remove(self)
+        self.hp_bar.add(all_sprites, bar_sprites)
 
     def update(self):
         if self.hp_left <= 0:
             self.kill()
+            self.add(dead_monsters)
 
         self.rect.x = self.cord_x
         self.rect.y = self.cord_y
@@ -265,7 +273,7 @@ class Bars(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
     def update(self):
-        if not self.owner.groups():
+        if dead_monsters in self.owner.groups():
             self.kill()
 
         self.hp_left = self.owner.hp_left
@@ -297,9 +305,11 @@ all_sprites = pygame.sprite.Group()
 player_sprite = pygame.sprite.Group()
 gun_sprites = pygame.sprite.Group()
 monster_sprites = pygame.sprite.Group()
-colide_group = pygame.sprite.Group()
+collide_group = pygame.sprite.Group()
 bullet_group = pygame.sprite.Group()
 bar_sprites = pygame.sprite.Group()
+dead_monsters = pygame.sprite.Group()
+
 
 pl = Player((100, 100), '[image_name]')
 gun = Gun((200, 200), '[image_name]', ammo=30, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150)
@@ -307,9 +317,6 @@ gun2 = Gun((300, 200), '[image_name]', ammo=5, reload_time=1000)
 m1 = Monster((300, 100), '[image_name]')
 m2 = Monster((400, 100), '[image_name]', hp=1)
 
-for i in monster_sprites:
-    i.hp_left -= 0
-    print(i.hp_left)
 
 if __name__ == '__main__':
     pygame.init()
@@ -319,6 +326,9 @@ if __name__ == '__main__':
     clock = pygame.time.Clock()
     FPS = 60
     running = True
+
+    respawn_monsters = pygame.USEREVENT + 3
+    pygame.time.set_timer(respawn_monsters, 3000)
 
     while running:
         for event in pygame.event.get():
@@ -345,7 +355,10 @@ if __name__ == '__main__':
                     else:
                         pygame.time.set_timer(pl.active_gun.shoot_event, 0)
                         pl.active_gun.can_shoot = True
-                    
+            
+            if event.type == respawn_monsters:
+                for monster in dead_monsters:
+                    monster.respawn()
 
         k_pressed()
 
