@@ -28,8 +28,8 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         pygame.draw.rect(self.image, (128, 0, 255), (0, 0, 50, 50), 0)
 
-        self.rect.x = center_pos[0] - 50 // 2
-        self.rect.y = center_pos[1] - 50 // 2
+        self.rect.x = center_pos[0] - self.image.get_width() // 2
+        self.rect.y = center_pos[1] - self.image.get_height() // 2
 
         self.cord_x = self.rect.x
         self.cord_y = self.rect.y
@@ -66,7 +66,7 @@ class Player(pygame.sprite.Sprite):
 
 
 class Gun(pygame.sprite.Sprite):
-    def __init__(self, center_pos, image, damage_type='point', bullet_color=(128, 128, 128), bullet_size=(10, 10), fire_rate=300, \
+    def __init__(self, center_pos, image, immortal_bullet=False, damage_type='point', bullet_color=(128, 128, 128), bullet_size=(10, 10), bullet_speed=300, fire_rate=300, \
         damage=0, splash_damage=0, splash_radius=0, ammo=10, reload_time=3000, reload_event=1, shoot_event=2):
 
         super().__init__(all_sprites)
@@ -75,6 +75,7 @@ class Gun(pygame.sprite.Sprite):
         # Их не изменять
         self.bullet_color = bullet_color
         self.bullet_size = bullet_size
+        self.bullet_speed = bullet_speed
         self.damage_type = damage_type
         self.damage = damage
         self.splash_damage = splash_damage
@@ -153,6 +154,7 @@ class Bullet(pygame.sprite.Sprite):
     # damage_type: point, splash
     def __init__(self, gun, cords_from=(0, 0), cords_to=(0, 0)):
         super().__init__(all_sprites)
+        self.add(bullet_group)
 
         self.gun = gun
         self.cords_from = cords_from
@@ -185,8 +187,8 @@ class Bullet(pygame.sprite.Sprite):
             2, self.cords_to[1] - self.cords_from[1] - \
             self.image.get_height() / 2
 
-        vx = round(rel_x / math.sqrt(rel_x ** 2 + rel_y ** 2) * 300, 2)
-        vy = round(rel_y / math.sqrt(rel_x ** 2 + rel_y ** 2) * 300, 2)
+        vx = round(rel_x / math.sqrt(rel_x ** 2 + rel_y ** 2) * self.gun.bullet_speed, 2)
+        vy = round(rel_y / math.sqrt(rel_x ** 2 + rel_y ** 2) * self.gun.bullet_speed, 2)
 
         return (vx, vy)
 
@@ -195,7 +197,11 @@ class Bullet(pygame.sprite.Sprite):
         self.cords[1] += self.vy / 60
 
     def collision_handling(self):
-        pass
+        colides = pygame.sprite.groupcollide(bullet_group, colide_group, True, False)
+        for bullet, sprites in colides.items():
+            for sprite in sprites:
+                sprite.hp_left -= bullet.gun.damage
+
     
     def update(self):
         self.move()
@@ -204,7 +210,74 @@ class Bullet(pygame.sprite.Sprite):
         self.rect.y = self.cords[1]
 
         self.collision_handling()
-    
+
+
+class Monster(pygame.sprite.Sprite):
+    def __init__(self, center_pos, image, hp=100):
+        super().__init__(all_sprites)
+        self.add(monster_sprites)
+        self.add(colide_group)
+
+        self.active_gun = Hands()
+
+        self.max_hp = hp
+        self.hp_left = self.max_hp
+
+        self.hp_bar = Bars(owner=self, max_hp=self.max_hp)
+
+        self.image = pygame.Surface((30, 30), pygame.SRCALPHA, 32)
+        self.rect = self.image.get_rect()
+
+        pygame.draw.rect(self.image, (64, 0, 128), (0, 0, 30, 60), 0)
+
+        self.rect.x = center_pos[0] - self.image.get_width() // 2
+        self.rect.y = center_pos[1] - self.image.get_height() // 2
+
+        self.cord_x = self.rect.x
+        self.cord_y = self.rect.y
+        self.width = self.image.get_width()
+        self.height = self.image.get_height()
+
+    def update(self):
+        if self.hp_left <= 0:
+            self.kill()
+
+        self.rect.x = self.cord_x
+        self.rect.y = self.cord_y
+
+
+class Bars(pygame.sprite.Sprite):
+    def __init__(self, owner, max_hp=100, bar_size=(30, 10), border_size=2, bar_color=(255, 0, 0), bg_color_1=(0, 0, 0), bg_color_2=(128, 128, 128)):
+        super().__init__(all_sprites)
+        self.add(bar_sprites)
+
+        self.owner = owner
+        self.max_hp = max_hp
+        self.bar_size = bar_size
+        self.border_size = border_size
+        self.bar_color = bar_color
+        self.bg_color_1 = bg_color_1
+        self.bg_color_2 = bg_color_2
+
+        self.hp_left = self.max_hp
+
+        self.image = pygame.Surface((self.bar_size[0], self.bar_size[1]), pygame.SRCALPHA, 32)
+        self.rect = self.image.get_rect()
+
+    def update(self):
+        if not self.owner.groups():
+            self.kill()
+
+        self.hp_left = self.owner.hp_left
+
+        self.rect.x = self.owner.cord_x
+        self.rect.y = self.owner.cord_y - self.owner.height
+
+        pygame.draw.rect(self.image, (64, 64, 64), (0, 0, self.bar_size[0], self.bar_size[1]), 0)
+        pygame.draw.rect(self.image, (64, 0, 0), (self.border_size, self.border_size, self.bar_size[0] - \
+            2 * self.border_size, self.bar_size[1] - 2 * self.border_size), 0)
+        pygame.draw.rect(self.image, (255, 64, 64), (self.border_size, self.border_size, (self.bar_size[0] - \
+                    2 * self.border_size) * self.hp_left / self.max_hp, self.bar_size[1] - 2 * self.border_size), 0)
 
 
 def k_pressed():
@@ -223,11 +296,20 @@ def k_pressed():
 all_sprites = pygame.sprite.Group()
 player_sprite = pygame.sprite.Group()
 gun_sprites = pygame.sprite.Group()
-
+monster_sprites = pygame.sprite.Group()
+colide_group = pygame.sprite.Group()
+bullet_group = pygame.sprite.Group()
+bar_sprites = pygame.sprite.Group()
 
 pl = Player((100, 100), '[image_name]')
-gun = Gun((200, 200), '[image_name]', ammo=30, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150)
+gun = Gun((200, 200), '[image_name]', ammo=30, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150)
 gun2 = Gun((300, 200), '[image_name]', ammo=5, reload_time=1000)
+m1 = Monster((300, 100), '[image_name]')
+m2 = Monster((400, 100), '[image_name]', hp=1)
+
+for i in monster_sprites:
+    i.hp_left -= 0
+    print(i.hp_left)
 
 if __name__ == '__main__':
     pygame.init()
