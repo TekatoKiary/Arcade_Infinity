@@ -6,6 +6,9 @@ from others import TILED_MAP_DIR, PICTURE_WAllS
 import others
 
 
+# Очень непонятное изменение кода. Сократилось на около 20 строк, но это мало с тем, сколько я представлял.
+# Возможно, верну как было до этого коммита
+
 # комната 704*704
 # протяженность коридора 512 - 32
 
@@ -20,53 +23,23 @@ class RoomCorridor:
         self.tile_size = self.map.tilewidth
         self.picture_walls = dict()
         self.top_wall = False  # есть наверху полная стена или там коридор
+        self.redrawing = True
 
     def render(self, screen, x_speed, y_speed, player):
-        x1, y1, x2, y2 = self.rect_in_screen(self.x, self.y, self.width, self.height)
-        for y in range(y1, y2):
-            for x in range(x1, x2):
-                for layer in range(2):
-                    if not self.top_wall and layer == 1 and self.picture_walls.get(f'{x} {y}'):
-                        image = self.picture_walls[f'{x} {y}'][0].get_tile_image(*self.picture_walls[f'{x} {y}'][-1], 0)
-                        screen.blit(image, (self.x + x * self.tile_size, self.y + y * self.tile_size))
-                        continue
-                    image = self.map.get_tile_image(x, y, layer)
-                    if image:
-                        screen.blit(image, (self.x + x * self.tile_size, self.y + y * self.tile_size))
-                        if layer == 1 and any([x_speed, y_speed]):
-                            x_speed, y_speed = self.is_collising(player, image,
-                                                                 self.x + x * self.tile_size,
-                                                                 self.y + y * self.tile_size, x_speed, y_speed)
+        x_speed, y_speed = self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(2),
+                                           functions=[self.is_render_picture_walls, self.is_collising],
+                                           player=player, x_speed=x_speed,
+                                           y_speed=y_speed)
         return x_speed, y_speed
 
     def render_passing_walls(self, screen, player):
-        x1, y1, x2, y2 = self.rect_in_screen(self.x, self.y, self.width, self.height)
-        redrawing = True
-        for y in range(y1, y2):
-            for x in range(x1, x2):
-                image = self.map.get_tile_image(x, y, 2)
-                if image:
-                    screen.blit(image, (self.x + x * self.tile_size, self.y + y * self.tile_size))
-                    image_y = self.y + y * self.tile_size
-                    image_x = self.x + x * self.tile_size
-                    # Знаю, что раздроблено
-                    if 406 >= self.map.tiledgidmap[self.map.get_tile_gid(x, y, 2)] >= 404 or \
-                            (image_y + self.tile_size >= player.rect.y + player.rect.height >= image_y and (
-                                    player.rect.x +
-                                    player.rect.width >= image_x >=
-                                    player.rect.x or
-                                    player.rect.x + player.rect.width >=
-                                    image_x >= player.rect.x)):
-                        # сложно объяснить зачем условие: делает, можно сказать, 3D объекты-декорации
-                        redrawing = False
-        # Декорации, которые ничем не мешают персонажам
-        for y in range(y1, y2):
-            for x in range(x1, x2):
-                for layer in range(3, len(self.map.layers)):
-                    image = self.map.get_tile_image(x, y, layer)
-                    if image:
-                        screen.blit(image, (self.x + x * self.tile_size, self.y + y * self.tile_size))
-        if redrawing:
+        self.redrawing = True
+        self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, [2],
+                        functions=[self.redrawing_player],
+                        player=player)
+        #
+        self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(3, len(self.map.layers)))
+        if self.redrawing:
             player.draw()
 
     def rect_in_screen(self, x, y, width_dec, height_dec):
@@ -90,27 +63,64 @@ class RoomCorridor:
 
     def is_collising(self, player, image, x, y, x_speed, y_speed):
         # Можно сказать, создаем спрайт ячейки для проверки коллизии
-        cell = pygame.sprite.Sprite()
-        cell.image = image
-        cell.rect = image.get_rect()
-        cell.rect.x = x
-        cell.rect.y = y
-        height = player.rect.height  # сохранить точность роста персонажа
-        cell.rect.x = cell.rect.x - x_speed
-        player.rect.y += player.rect.height // 1.01  # Мы смотрим коллизию по ногам, а не по телу
-        player.rect.height -= player.rect.height // 1.01
-        if pygame.sprite.collide_rect(cell, player):
-            cell.rect.x = cell.rect.x + x_speed
-            x_speed = 0
-        else:
-            cell.rect.x = cell.rect.x + x_speed
-        cell.rect.y = cell.rect.y - y_speed
-        if pygame.sprite.collide_rect(cell, player):
-            y_speed = 0
-        cell.kill()  # утечка памяти
-        player.rect.height = height  # возвращаем как было
-        player.rect.y -= player.rect.height // 1.01
+        if any([x_speed, y_speed]):
+            cell = pygame.sprite.Sprite()
+            cell.image = image
+            cell.rect = image.get_rect()
+            cell.rect.y = y
+            height = player.rect.height  # сохранить точность роста персонажа
+            cell.rect.x = x - x_speed
+            player.rect.y += player.rect.height // 1.01  # Мы смотрим коллизию по ногам, а не по телу
+            player.rect.height -= player.rect.height // 1.01
+            if pygame.sprite.collide_rect(cell, player):
+                cell.rect.x = cell.rect.x + x_speed
+                x_speed = 0
+            else:
+                cell.rect.x = cell.rect.x + x_speed
+            cell.rect.y = cell.rect.y - y_speed
+            if pygame.sprite.collide_rect(cell, player):
+                y_speed = 0
+            cell.kill()  # утечка памяти
+            player.rect.height = height  # возвращаем как было
+            player.rect.y -= player.rect.height // 1.01
+
         return x_speed, y_speed
+
+    def blit_tiles(self, screen, room, x_pos, y_pos, w, h, layers, functions=[], is_top_wall=False,
+                   x_speed=None, y_speed=None, player=None, layers_collide=1):
+        x1, y1, x2, y2 = self.rect_in_screen(x_pos, y_pos, w, h)
+        for y in range(y1, y2):
+            for x in range(x1, x2):
+                for layer in layers:
+                    if self.is_render_picture_walls in functions:
+                        if (is_top_wall or layer == 1) and self.is_render_picture_walls(x, y):
+                            image = self.picture_walls[f'{x} {y}'][0].get_tile_image(
+                                *self.picture_walls[f'{x} {y}'][-1], 0)
+                            screen.blit(image, (x_pos + x * self.tile_size, y_pos + y * self.tile_size))
+                            continue
+                    image = room.get_tile_image(x, y, layer)
+                    if image:
+                        screen.blit(image, (x_pos + x * self.tile_size, y_pos + y * self.tile_size))
+                        if self.is_collising in functions and layer == layers_collide:
+                            x_speed, y_speed = self.is_collising(player, image, x_pos + x * self.tile_size,
+                                                                 y_pos + y * self.tile_size, x_speed, y_speed)
+                        if self.redrawing_player in functions:
+                            self.redrawing_player(player, x, y)
+        if x_speed is not None:
+            return x_speed, y_speed
+
+    def is_render_picture_walls(self, x, y):
+        return self.picture_walls.get(f'{x} {y}')
+
+    def redrawing_player(self, player, x, y):
+        image_y = self.y + y * self.tile_size
+        image_x = self.x + x * self.tile_size
+        if 406 >= self.map.tiledgidmap[self.map.get_tile_gid(x, y, 2)] >= 404 or \
+                (image_y + self.tile_size >= player.rect.y + player.rect.height >= image_y and (
+                        player.rect.x + player.rect.width >= image_x >= player.rect.x or
+                        player.rect.x + player.rect.width >= image_x >= player.rect.x)):
+            # сложно объяснить зачем условие: делает, можно сказать, 3D объекты-декорации
+            self.redrawing = False
 
 
 class Room(RoomCorridor):
@@ -123,24 +133,10 @@ class Room(RoomCorridor):
         for wall in self.walls:
             # Верхняя стена не должна накладываться на персонажа, а должно быть наоборот. Поэтому
             if wall.filename.find('top') != -1:
-                x1, y1, x2, y2 = self.rect_in_screen(self.x, self.y, wall.width, wall.height)
-                for y in range(y1, y2):
-                    for x in range(x1, x2):
-                        if self.picture_walls.get(f'{x} {y}'):
-                            image = self.picture_walls[f'{x} {y}'][0].get_tile_image(
-                                *self.picture_walls[f'{x} {y}'][-1], 0)
-                            screen.blit(image, (self.x + x * self.tile_size, self.y + y * self.tile_size))
-                            continue
-                        image = wall.get_tile_image(x, y, 0)
-                        if image:
-                            screen.blit(image,
-                                        (self.x + x * self.tile_size,
-                                         self.y + y * self.tile_size,))
-                            if any([x_speed, y_speed]):
-                                x_speed, y_speed = self.is_collising(player, image,
-                                                                     self.x + x * self.tile_size,
-                                                                     self.y + y * self.tile_size,
-                                                                     x_speed, y_speed)
+                x_speed, y_speed = self.blit_tiles(screen, wall, self.x, self.y, wall.width,
+                                                   wall.height, [0], x_speed=x_speed, y_speed=y_speed, player=player,
+                                                   functions=[self.is_collising, self.is_render_picture_walls],
+                                                   layers_collide=0, is_top_wall=True)
         return x_speed, y_speed
 
     def render_passing_walls(self, screen, x_speed, y_speed, player):
@@ -152,20 +148,9 @@ class Room(RoomCorridor):
                 'bottom') != -1 else 0  # если нижняя стена
             # если правая стена:
             is_right = ((self.width - 2) * self.tile_size) if wall.filename.find('right') != -1 else 0
-            x1, y1, x2, y2 = self.rect_in_screen(is_right + self.x, is_bottom + self.y, wall.width, wall.height)
-            for y in range(y1, y2):
-                for x in range(x1, x2):
-                    for layer in range(len(wall.layers)):
-                        image = wall.get_tile_image(x, y, layer)
-                        if image:
-                            screen.blit(image,
-                                        (self.x + x * self.tile_size + is_right,
-                                         self.y + y * self.tile_size + is_bottom))
-                            if layer == 0 and any([x_speed, y_speed]):
-                                x_speed, y_speed = self.is_collising(player, image,
-                                                                     self.x + x * self.tile_size + is_right,
-                                                                     self.y + y * self.tile_size + is_bottom,
-                                                                     x_speed, y_speed)
+            x_speed, y_speed = self.blit_tiles(screen, wall, is_right + self.x, is_bottom + self.y, wall.width,
+                                               wall.height, range(len(wall.layers)), functions=[self.is_collising],
+                                               x_speed=x_speed, y_speed=y_speed, player=player, layers_collide=0)
         return x_speed, y_speed
 
     def set_walls(self, left, right, top, bottom):
@@ -205,9 +190,4 @@ class Corridor(RoomCorridor):
             self.y += 336 - self.tile_size * 13 // 2 - 8
 
     def render_passing_walls(self, screen, player):
-        x1, y1, x2, y2 = self.rect_in_screen(self.x, self.y, self.width, self.height)
-        for y in range(y1, y2):
-            for x in range(x1, x2):
-                image = self.map.get_tile_image(x, y, 2)
-                if image:
-                    screen.blit(image, (self.x + x * self.tile_size, self.y + y * self.tile_size))
+        self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, [2])
