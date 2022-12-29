@@ -329,9 +329,13 @@ class Bars(pygame.sprite.Sprite):
                     2 * self.border_size) * self.hp_left / self.max_hp, self.bar_size[1] - 2 * self.border_size), 0)
 
 
-def update_hp_bar(health_percent):
+def update_hp_bar(bar, health_percent):
     size_delta = (1 - health_percent) * 94
-    player_hp_bar.update_image(image='main_ui.png', image_pos=(214 + size_delta, 0), image_size=(96 - size_delta, 18))
+    bar.update_image(image='main_ui.png', image_pos=(214 + size_delta, 0), image_size=(96 - size_delta, 18))
+
+def update_player_balance(sprite):
+        sprite.update_text(text=pl.balance)
+
 
 if __name__ == '__main__':
     pygame.init()
@@ -351,23 +355,25 @@ if __name__ == '__main__':
     bar_sprites = pygame.sprite.Group()
     dead_monsters = pygame.sprite.Group()
     ui_sprites = pygame.sprite.Group()
-    
-    player_info = ui.Info(pos=(20, 20), sprite_group=(all_sprites, ui_sprites), image_pos=(56, 0), image_size=(154, 48))
-    player_hp_bar = ui.Info(pos=(20 + 54, 20 + 4), image_pos=(214, 0), image_size=(94, 18), sprite_group=(all_sprites, ui_sprites))
-    shop_button = ui.Buttons(pos=(720, 20), sprite_group=(all_sprites, ui_sprites), image_pos=(192, 52), image_size=(60, 28))
 
+    # Основные спрайты
     pl = Player((100, 100), '[image_name]')
-
-    gun = Gun((200, 200), '[image_name]', ammo=999, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150, shooting_accuracy=0.8)
+    gun = Gun((200, 200), '[image_name]', ammo=999, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150, shooting_accuracy=0.9)
     gun2 = Gun((300, 200), '[image_name]', ammo=5, reload_time=1000)
     m1 = Monster((300, 100), '[image_name]')
     m2 = Monster((400, 100), '[image_name]', hp=1)
-    
+
+    # Ui
+    player_info = ui.Info(pos=(20, 20), sprite_group=(all_sprites, ui_sprites), image_pos=(56, 0), image_size=(154, 48))
+    player_hp_bar = ui.Info(pos=(20 + 54, 20 + 4), image_pos=(214, 0), image_size=(94, 18), sprite_group=(all_sprites, ui_sprites))
+    shop_button = ui.Buttons(pos=(720, 20), sprite_group=(all_sprites, ui_sprites), image_pos=(192, 52), image_size=(60, 28))
+    player_balance = ui.Text(pos=(90, 50), sprite_group=all_sprites)
     mini_pl_image = pygame.transform.scale(pl.image, (pl.image.get_width() * 0.5, pl.image.get_height() * 0.5))
     character_icon = ui.Img((20 + 52 / 2 - pl.image.get_width() / 4, 20 + 48 / 2 - pl.image.get_height() / 4), image=mini_pl_image, sprite_group=(all_sprites, ui_sprites))
 
+    # Респавн мобов для тестов
     respawn_monsters = pygame.USEREVENT + 3
-    pygame.time.set_timer(respawn_monsters, 3000)
+    pygame.time.set_timer(respawn_monsters, 30)
 
     while running:
         for event in pygame.event.get():
@@ -411,7 +417,8 @@ if __name__ == '__main__':
                     monster.respawn()
 
         pl.move()
-        update_hp_bar(pl.hp_left / pl.max_hp)
+        update_hp_bar(player_hp_bar, pl.hp_left / pl.max_hp)
+        update_player_balance(player_balance)
 
         screen.fill((0, 0, 0))
 

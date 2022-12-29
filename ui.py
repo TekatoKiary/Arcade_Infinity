@@ -55,3 +55,23 @@ class Img(Ui):
         super().__init__(pos=pos, sprite_group=sprite_group)
 
         self.image = image
+
+class Text(pygame.sprite.Sprite):
+    def __init__(self, pos=(0, 0), text='Text', font='Times New Roman', size=(12), color=(255, 255, 255), sprite_group=[]):
+        super().__init__(sprite_group)
+        self.pos = pos
+        self.text = str(text)
+        self.font = font
+        self.size = size
+        self.color = color
+        
+        self.image = pygame.font.Font('ui/MinimalPixel v2.ttf', self.size).render(self.text, 1, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.x = self.pos[0]
+        self.rect.y = self.pos[1]
+    
+    def update_text(self, text):
+        self.image = pygame.font.Font('ui/MinimalPixel v2.ttf', self.size).render(str(text), 1, self.color)
+    
+    def update_all(self, pos=(0, 0), text='Text', font='Times New Roman', size=(12), color=(255, 255, 255), sprite_group=[]):
+        self.__init__(pos, text, font, size, color, sprite_group)
