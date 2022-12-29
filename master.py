@@ -19,9 +19,12 @@ class Hands(pygame.sprite.Sprite):
 
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, center_pos, image):
+    def __init__(self, center_pos=(0, 0), image=None, max_hp=100):
         super().__init__(all_sprites)
         self.add(player_sprite)
+
+        self.max_hp = max_hp
+        self.hp_left = self.max_hp
 
         self.active_gun = Hands()
 
@@ -223,12 +226,19 @@ class Bullet(pygame.sprite.Sprite):
                 sprite.hp_left -= bullet.gun.damage
 
     
+    def optimize(self):
+        if not 0 < self.cords[0] < 800 or \
+            not 0 < self.cords[1] < 500:
+                self.kill()
+
+
     def update(self):
         self.move()
 
         self.rect.x = self.cords[0]
         self.rect.y = self.cords[1]
 
+        self.optimize()
         self.collision_handling()
 
 
@@ -315,6 +325,10 @@ class Bars(pygame.sprite.Sprite):
                     2 * self.border_size) * self.hp_left / self.max_hp, self.bar_size[1] - 2 * self.border_size), 0)
 
 
+def update_hp_bar(health_percent):
+    size_delta = (1 - health_percent) * 94
+    player_hp_bar.update_image(image='main_ui.png', image_pos=(214 + size_delta, 0), image_size=(96 - size_delta, 18))
+
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('Game')
@@ -333,15 +347,20 @@ if __name__ == '__main__':
     bar_sprites = pygame.sprite.Group()
     dead_monsters = pygame.sprite.Group()
     ui_sprites = pygame.sprite.Group()
-
+    
+    player_info = ui.Info(pos=(20, 20), sprite_group=(all_sprites, ui_sprites), image_pos=(56, 0), image_size=(154, 48))
+    player_hp_bar = ui.Info(pos=(20 + 54, 20 + 4), image_pos=(214, 0), image_size=(94, 18), sprite_group=(all_sprites, ui_sprites))
+    shop_button = ui.Buttons(pos=(720, 20), sprite_group=(all_sprites, ui_sprites), image_pos=(192, 52), image_size=(60, 28))
 
     pl = Player((100, 100), '[image_name]')
-    gun = Gun((200, 200), '[image_name]', ammo=30, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150)
+
+    gun = Gun((200, 200), '[image_name]', ammo=330, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=50)
     gun2 = Gun((300, 200), '[image_name]', ammo=5, reload_time=1000)
     m1 = Monster((300, 100), '[image_name]')
     m2 = Monster((400, 100), '[image_name]', hp=1)
     
-    btn1 = ui.Buttons((720, 20), image='main_ui.png', sprite_group=(all_sprites, ui_sprites), image_pos=(192, 52), image_size=(60, 28))
+    mini_pl_image = pygame.transform.scale(pl.image, (pl.image.get_width() * 0.5, pl.image.get_height() * 0.5))
+    character_icon = ui.Img((20 + 52 / 2 - pl.image.get_width() / 4, 20 + 48 / 2 - pl.image.get_height() / 4), image=mini_pl_image, sprite_group=(all_sprites, ui_sprites))
 
     respawn_monsters = pygame.USEREVENT + 3
     pygame.time.set_timer(respawn_monsters, 3000)
@@ -361,8 +380,9 @@ if __name__ == '__main__':
                     if sprite.mouse_clicked():
                         can_shoot = False
 
-                        if btn1.mouse_clicked():
-                            print('open the shop')
+                        if shop_button.mouse_clicked():
+                            print('Take the damage!')
+                            pl.hp_left -= 10
 
                 if can_shoot:
                     pl.on_clicked(event)
@@ -387,6 +407,7 @@ if __name__ == '__main__':
                     monster.respawn()
 
         pl.move()
+        update_hp_bar(pl.hp_left / pl.max_hp)
 
         screen.fill((0, 0, 0))
 
