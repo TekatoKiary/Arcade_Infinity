@@ -3,6 +3,7 @@ import os
 import random
 import math
 import time
+import ui
 
 mouse_pos = (0, 0)           
 
@@ -34,6 +35,8 @@ class Player(pygame.sprite.Sprite):
         self.cord_x = self.rect.x
         self.cord_y = self.rect.y
 
+        self.balance = 10
+
     def on_clicked(self, event):
         if event.button == 1:
             self.active_gun.try_shoot()
@@ -43,6 +46,7 @@ class Player(pygame.sprite.Sprite):
             self.drop_gun()
         if event.key == pygame.K_f:
             self.take_gun()
+
 
     def take_gun(self):
         for gun in gun_sprites:
@@ -55,10 +59,25 @@ class Player(pygame.sprite.Sprite):
         if self.active_gun.__class__.__name__ != 'Hands':
             self.active_gun.is_raised = False
             self.active_gun.is_reloading_now = False
-            pygame.time.set_timer(pl.active_gun.reload_event, 0)
-            pl.active_gun.can_shoot = True
-            pygame.time.set_timer(pl.active_gun.shoot_event, 0)
+            pygame.time.set_timer(self.active_gun.reload_event, 0)
+            self.active_gun.can_shoot = True
+            pygame.time.set_timer(self.active_gun.shoot_event, 0)
             self.active_gun = Hands()
+
+    def move(self):
+        keys = pygame.key.get_pressed()
+
+        if keys[pygame.K_w]:
+            self.cord_y -= 80 / 60
+        if keys[pygame.K_a]:
+            self.cord_x -= 80 / 60
+        if keys[pygame.K_s]:
+            self.cord_y += 80 / 60
+        if keys[pygame.K_d]:
+            self.cord_x += 80 / 60
+    
+    def give_money(self, reward):
+        self.balance += reward
 
     def update(self):
         self.rect.x = self.cord_x
@@ -183,10 +202,10 @@ class Bullet(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.image, self.math_angle())
 
     def math_speed(self):
-        rel_x, rel_y = self.cords_to[0] - self.cords_from[0] - \
+        rel_x, rel_y = (self.cords_to[0] - self.cords_from[0] - \
             self.image.get_width() / \
-            2, self.cords_to[1] - self.cords_from[1] - \
-            self.image.get_height() / 2
+            2), (self.cords_to[1] - self.cords_from[1] - \
+            self.image.get_height() / 2)
 
         vx = round(rel_x / math.sqrt(rel_x ** 2 + rel_y ** 2) * self.gun.bullet_speed, 2)
         vy = round(rel_y / math.sqrt(rel_x ** 2 + rel_y ** 2) * self.gun.bullet_speed, 2)
@@ -214,7 +233,7 @@ class Bullet(pygame.sprite.Sprite):
 
 
 class Monster(pygame.sprite.Sprite):
-    def __init__(self, center_pos, image, hp=100):
+    def __init__(self, center_pos, image, hp=100, reward=1):
         super().__init__(all_sprites)
         self.add(monster_sprites)
         self.add(collide_group)
@@ -222,6 +241,7 @@ class Monster(pygame.sprite.Sprite):
         self.active_gun = Hands()
 
         self.max_hp = hp
+        self.reward = reward
         self.hp_left = self.max_hp
 
         self.hp_bar = Bars(owner=self, max_hp=self.max_hp)
@@ -244,11 +264,18 @@ class Monster(pygame.sprite.Sprite):
         self.add(all_sprites, collide_group, monster_sprites)
         dead_monsters.remove(self)
         self.hp_bar.add(all_sprites, bar_sprites)
+    
+    def die(self):
+        self.kill()
+        self.add(dead_monsters)
+    
+    def give_reward(self):
+        pl.give_money(self.reward)
 
     def update(self):
         if self.hp_left <= 0:
-            self.kill()
-            self.add(dead_monsters)
+            self.die()
+            self.give_reward()
 
         self.rect.x = self.cord_x
         self.rect.y = self.cord_y
@@ -288,36 +315,6 @@ class Bars(pygame.sprite.Sprite):
                     2 * self.border_size) * self.hp_left / self.max_hp, self.bar_size[1] - 2 * self.border_size), 0)
 
 
-def k_pressed():
-    keys = pygame.key.get_pressed()
-
-    if keys[pygame.K_w]:
-        pl.cord_y -= 80 / 60
-    if keys[pygame.K_a]:
-        pl.cord_x -= 80 / 60
-    if keys[pygame.K_s]:
-        pl.cord_y += 80 / 60
-    if keys[pygame.K_d]:
-        pl.cord_x += 80 / 60
-
-
-all_sprites = pygame.sprite.Group()
-player_sprite = pygame.sprite.Group()
-gun_sprites = pygame.sprite.Group()
-monster_sprites = pygame.sprite.Group()
-collide_group = pygame.sprite.Group()
-bullet_group = pygame.sprite.Group()
-bar_sprites = pygame.sprite.Group()
-dead_monsters = pygame.sprite.Group()
-
-
-pl = Player((100, 100), '[image_name]')
-gun = Gun((200, 200), '[image_name]', ammo=30, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150)
-gun2 = Gun((300, 200), '[image_name]', ammo=5, reload_time=1000)
-m1 = Monster((300, 100), '[image_name]')
-m2 = Monster((400, 100), '[image_name]', hp=1)
-
-
 if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('Game')
@@ -326,6 +323,25 @@ if __name__ == '__main__':
     clock = pygame.time.Clock()
     FPS = 60
     running = True
+
+    all_sprites = pygame.sprite.Group()
+    player_sprite = pygame.sprite.Group()
+    gun_sprites = pygame.sprite.Group()
+    monster_sprites = pygame.sprite.Group()
+    collide_group = pygame.sprite.Group()
+    bullet_group = pygame.sprite.Group()
+    bar_sprites = pygame.sprite.Group()
+    dead_monsters = pygame.sprite.Group()
+    ui_sprites = pygame.sprite.Group()
+
+
+    pl = Player((100, 100), '[image_name]')
+    gun = Gun((200, 200), '[image_name]', ammo=30, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150)
+    gun2 = Gun((300, 200), '[image_name]', ammo=5, reload_time=1000)
+    m1 = Monster((300, 100), '[image_name]')
+    m2 = Monster((400, 100), '[image_name]', hp=1)
+    
+    btn1 = ui.Buttons((720, 20), image='main_ui.png', sprite_group=(all_sprites, ui_sprites), image_pos=(192, 52), image_size=(60, 28))
 
     respawn_monsters = pygame.USEREVENT + 3
     pygame.time.set_timer(respawn_monsters, 3000)
@@ -339,7 +355,17 @@ if __name__ == '__main__':
                 mouse_pos = event.pos
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                pl.on_clicked(event)
+                can_shoot = True
+                for sprite in ui_sprites:
+
+                    if sprite.mouse_clicked():
+                        can_shoot = False
+
+                        if btn1.mouse_clicked():
+                            print('open the shop')
+
+                if can_shoot:
+                    pl.on_clicked(event)
             
             if event.type == pygame.KEYDOWN:
                 pl.on_k_pressed(event)
@@ -360,7 +386,7 @@ if __name__ == '__main__':
                 for monster in dead_monsters:
                     monster.respawn()
 
-        k_pressed()
+        pl.move()
 
         screen.fill((0, 0, 0))
 
