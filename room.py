@@ -1,6 +1,8 @@
+import random
+
 import pygame
 import pytmx
-from others import TILED_MAP_DIR
+from others import TILED_MAP_DIR, PICTURE_WAllS
 import others
 
 
@@ -9,21 +11,25 @@ import others
 
 class RoomCorridor:
 
-    def __init__(self, x, y, filename, type):
+    def __init__(self, x, y, filename):
         self.map = pytmx.load_pygame(f'{TILED_MAP_DIR}\\{filename}.tmx')
         self.x = x * (704 + 512)
         self.y = y * (704 + 512)
         self.height = self.map.height
         self.width = self.map.width
         self.tile_size = self.map.tilewidth
-        self.type = type
-        print(others.WIDTH)
+        self.picture_walls = dict()
+        self.top_wall = False  # есть наверху полная стена или там коридор
 
     def render(self, screen, x_speed, y_speed, player):
         x1, y1, x2, y2 = self.rect_in_screen(self.x, self.y, self.width, self.height)
         for y in range(y1, y2):
             for x in range(x1, x2):
                 for layer in range(2):
+                    if not self.top_wall and layer == 1 and self.picture_walls.get(f'{x} {y}'):
+                        image = self.picture_walls[f'{x} {y}'][0].get_tile_image(*self.picture_walls[f'{x} {y}'][-1], 0)
+                        screen.blit(image, (self.x + x * self.tile_size, self.y + y * self.tile_size))
+                        continue
                     image = self.map.get_tile_image(x, y, layer)
                     if image:
                         screen.blit(image, (self.x + x * self.tile_size, self.y + y * self.tile_size))
@@ -109,7 +115,7 @@ class RoomCorridor:
 
 class Room(RoomCorridor):
     def __init__(self, x, y, filename):
-        super(Room, self).__init__(x, y, filename, 'room')
+        super(Room, self).__init__(x, y, filename)
         self.walls = []
 
     def render(self, screen, x_speed, y_speed, player):
@@ -120,17 +126,21 @@ class Room(RoomCorridor):
                 x1, y1, x2, y2 = self.rect_in_screen(self.x, self.y, wall.width, wall.height)
                 for y in range(y1, y2):
                     for x in range(x1, x2):
-                        for layer in range(len(wall.layers)):
-                            image = wall.get_tile_image(x, y, layer)
-                            if image:
-                                screen.blit(image,
-                                            (self.x + x * self.tile_size,
-                                             self.y + y * self.tile_size,))
-                                if layer == 0 and any([x_speed, y_speed]):
-                                    x_speed, y_speed = self.is_collising(player, image,
-                                                                         self.x + x * self.tile_size,
-                                                                         self.y + y * self.tile_size,
-                                                                         x_speed, y_speed)
+                        if self.picture_walls.get(f'{x} {y}'):
+                            image = self.picture_walls[f'{x} {y}'][0].get_tile_image(
+                                *self.picture_walls[f'{x} {y}'][-1], 0)
+                            screen.blit(image, (self.x + x * self.tile_size, self.y + y * self.tile_size))
+                            continue
+                        image = wall.get_tile_image(x, y, 0)
+                        if image:
+                            screen.blit(image,
+                                        (self.x + x * self.tile_size,
+                                         self.y + y * self.tile_size,))
+                            if any([x_speed, y_speed]):
+                                x_speed, y_speed = self.is_collising(player, image,
+                                                                     self.x + x * self.tile_size,
+                                                                     self.y + y * self.tile_size,
+                                                                     x_speed, y_speed)
         return x_speed, y_speed
 
     def render_passing_walls(self, screen, x_speed, y_speed, player):
@@ -164,11 +174,29 @@ class Room(RoomCorridor):
         for i in walls:
             if i:
                 self.walls.append(pytmx.load_pygame(f'{TILED_MAP_DIR}\\{i}_wall.tmx'))
+        self.top_wall = walls[2]
+        self.set_picture_walls()
+
+    def set_picture_walls(self):
+        x_pos = 2
+        for _ in range(8):
+            pic_wall = pytmx.load_pygame(random.choice(PICTURE_WAllS))
+            if not self.top_wall and x_pos == 20:
+                x_pos += 6
+                continue
+            i = 0
+            for x in range(x_pos, x_pos + 4):
+                j = 0
+                for y in range(1, 4):
+                    self.picture_walls[f'{x} {y}'] = [pic_wall, (i, j)]
+                    j += 1
+                i += 1
+            x_pos += 6
 
 
 class Corridor(RoomCorridor):
     def __init__(self, x, y, orientation):
-        super(Corridor, self).__init__(x, y, f'{orientation}_corridor', 'corridor')
+        super(Corridor, self).__init__(x, y, f'{orientation}_corridor')
         if orientation == 'vertical':
             self.y += 672
             self.x += 288
