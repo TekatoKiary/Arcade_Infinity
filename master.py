@@ -4,8 +4,7 @@ import random
 import math
 import time
 import ui
-
-mouse_pos = (0, 0)           
+        
 
 class Hands(pygame.sprite.Sprite):
     def __init__(self):
@@ -89,7 +88,7 @@ class Player(pygame.sprite.Sprite):
 
 class Gun(pygame.sprite.Sprite):
     def __init__(self, center_pos, image, destroy_bullets=True, damage_type='point', bullet_color=(128, 128, 128), bullet_size=(10, 10), bullet_speed=300, fire_rate=300, \
-        damage=0, splash_damage=0, splash_radius=0, ammo=10, reload_time=3000, reload_event=1, shoot_event=2):
+        shooting_accuracy=1, damage=0, splash_damage=0, splash_radius=0, ammo=10, reload_time=3000, reload_event=1, shoot_event=2):
 
         super().__init__(all_sprites)
         self.add(gun_sprites)
@@ -105,6 +104,7 @@ class Gun(pygame.sprite.Sprite):
         self.splash_radius = splash_radius
         self.ammo = ammo
         self.fire_rate = fire_rate
+        self.shooting_accuracy = shooting_accuracy
 
         self.ammo_amount = self.ammo
         self.reload_time = reload_time
@@ -141,7 +141,7 @@ class Gun(pygame.sprite.Sprite):
         if not self.is_reloading_now:
             if self.ammo_amount > 0:
                 self.ammo_amount -= 1
-                Bullet(pl.active_gun, (self.cord_x, self.cord_y), mouse_pos)
+                Bullet(pl.active_gun, (self.cord_x, self.cord_y), pygame.mouse.get_pos())
             else:
                 self.is_reloading_now = True
                 pygame.time.set_timer(self.reload_event, self.reload_time)
@@ -155,8 +155,8 @@ class Gun(pygame.sprite.Sprite):
             self.rotate_image, self.math_angle())
 
     def math_angle(self):
-        rel_x, rel_y = mouse_pos[0] - self.cord_x - \
-            self.img_width / 2, mouse_pos[1] - \
+        rel_x, rel_y = pygame.mouse.get_pos()[0] - self.cord_x - \
+            self.img_width / 2, pygame.mouse.get_pos()[1] - \
             self.cord_y - self.img_height / 2
         angle = (180 / math.pi) * math.atan2(rel_x, rel_y)
         return angle
@@ -195,8 +195,8 @@ class Bullet(pygame.sprite.Sprite):
         self.rotate()
 
     def math_angle(self):
-        rel_x, rel_y = mouse_pos[0] - self.rect.x - \
-            self.gun.bullet_size[0] / 2, mouse_pos[1] - \
+        rel_x, rel_y = self.randomized_mouse_cord_x - self.rect.x - \
+            self.gun.bullet_size[0] / 2, self.randomized_mouse_cord_y - \
             self.rect.y - self.gun.bullet_size[1] / 2
         angle = (180 / math.pi) * math.atan2(rel_x, rel_y)
         return angle
@@ -205,14 +205,18 @@ class Bullet(pygame.sprite.Sprite):
         self.image = pygame.transform.rotate(self.image, self.math_angle())
 
     def math_speed(self):
-        rel_x, rel_y = (self.cords_to[0] - self.cords_from[0] - \
-            self.image.get_width() / \
-            2), (self.cords_to[1] - self.cords_from[1] - \
-            self.image.get_height() / 2)
+        self.randomized_mouse_cord_x = self.cords_to[0] + random.choice([-1, 1]) * \
+            random.uniform(0, (1 - self.gun.shooting_accuracy)) * self.cords_to[0]
+
+        self.randomized_mouse_cord_y = self.cords_to[1] + random.choice([-1, 1]) * \
+            random.uniform(0, (1 - self.gun.shooting_accuracy)) * self.cords_to[1]
+
+        rel_x = self.randomized_mouse_cord_x - self.cords_from[0] - self.image.get_width() / 2
+        rel_y = self.randomized_mouse_cord_y - self.cords_from[1] - self.image.get_height() / 2
+
 
         vx = round(rel_x / math.sqrt(rel_x ** 2 + rel_y ** 2) * self.gun.bullet_speed, 2)
         vy = round(rel_y / math.sqrt(rel_x ** 2 + rel_y ** 2) * self.gun.bullet_speed, 2)
-
         return (vx, vy)
 
     def move(self):
@@ -354,7 +358,7 @@ if __name__ == '__main__':
 
     pl = Player((100, 100), '[image_name]')
 
-    gun = Gun((200, 200), '[image_name]', ammo=330, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=50)
+    gun = Gun((200, 200), '[image_name]', ammo=999, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150, shooting_accuracy=0.8)
     gun2 = Gun((300, 200), '[image_name]', ammo=5, reload_time=1000)
     m1 = Monster((300, 100), '[image_name]')
     m2 = Monster((400, 100), '[image_name]', hp=1)
@@ -371,7 +375,7 @@ if __name__ == '__main__':
                 running = False
 
             if event.type == pygame.MOUSEMOTION:
-                mouse_pos = event.pos
+                pass
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 can_shoot = True
