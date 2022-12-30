@@ -4,7 +4,8 @@ import random
 import math
 import time
 import ui
-        
+import copy
+
 
 class Hands(pygame.sprite.Sprite):
     def __init__(self):
@@ -57,8 +58,9 @@ class Player(pygame.sprite.Sprite):
         for gun in gun_sprites:
             if self.active_gun.__class__.__name__ == 'Hands':
                 if pygame.sprite.spritecollide(gun, player_sprite, False):
-                    gun.is_raised = True
-                    self.active_gun = gun
+                    if gun.can_be_raised:
+                        gun.is_raised = True
+                        self.active_gun = gun
             
     def drop_gun(self):
         if self.active_gun.__class__.__name__ != 'Hands':
@@ -94,12 +96,13 @@ class Gun(pygame.sprite.Sprite):
         bullet_size=(10, 10), bullet_speed=300, fire_rate=300, shooting_accuracy=1, damage=0, splash_damage=0, splash_radius=0, ammo=10, \
             reload_time=3000, reload_event=1, shoot_event=2):
 
-        super().__init__(all_sprites)
-        self.add(gun_sprites)
+        super().__init__()
+        self.add(gun_sprites, all_sprites)
 
         self.name = name
 
         # Их не изменять
+        self.center_pos = center_pos
         self.destroy_bullets = destroy_bullets
         self.bullet_color = bullet_color
         self.bullet_size = bullet_size
@@ -115,22 +118,23 @@ class Gun(pygame.sprite.Sprite):
         self.ammo_amount = self.ammo
         self.reload_time = reload_time
 
+        self.reload_event_num = reload_event
         self.reload_event = pygame.USEREVENT + reload_event
+        self.shoot_event_num = shoot_event
         self.shoot_event = pygame.USEREVENT + shoot_event
 
         self.image = pygame.Surface((25, 25), pygame.SRCALPHA, 32)
         self.rotate_image = self.image
-        self.img_width = self.rotate_image.get_width()
-        self.img_height = self.rotate_image.get_height()
         self.rect = self.image.get_rect()
         pygame.draw.rect(self.image, (128, 255, 128), (0, 0, 25, 25), 0)
 
-        self.rect.x = center_pos[0] - self.img_width / 2
-        self.rect.y = center_pos[1] - self.img_height / 2
+        self.rect.x = center_pos[0] - self.rotate_image.get_width() / 2
+        self.rect.y = center_pos[1] - self.rotate_image.get_height() / 2
 
         self.cord_x = self.rect.x
         self.cord_y = self.rect.y
 
+        self.can_be_raised = True
         self.is_raised = False
         self.is_reloading_now = False
         self.can_shoot = True
@@ -162,8 +166,8 @@ class Gun(pygame.sprite.Sprite):
 
     def math_angle(self):
         rel_x, rel_y = pygame.mouse.get_pos()[0] - self.cord_x - \
-            self.img_width / 2, pygame.mouse.get_pos()[1] - \
-            self.cord_y - self.img_height / 2
+            self.rotate_image.get_width() / 2, pygame.mouse.get_pos()[1] - \
+            self.cord_y - self.rotate_image.get_height() / 2
         angle = (180 / math.pi) * math.atan2(rel_x, rel_y)
         return angle
 
@@ -177,6 +181,13 @@ class Gun(pygame.sprite.Sprite):
             self.cord_y = pl.cord_y + 20
 
             self.rotate()
+    
+    def copy(self):
+        return Gun(name=self.name, center_pos=self.center_pos, image=self.image, destroy_bullets=self.destroy_bullets, \
+            damage_type=self.damage_type, bullet_color=self.bullet_color, bullet_size=self.bullet_size, bullet_speed=self.bullet_speed, \
+                fire_rate=self.fire_rate, shooting_accuracy=self.shooting_accuracy, damage=self.damage, splash_damage=self.splash_damage, \
+                    splash_radius=self.splash_radius, ammo=self.ammo, reload_time=self.reload_time, reload_event=self.reload_event_num, \
+                        shoot_event=self.shoot_event_num)
 
 
 class Bullet(pygame.sprite.Sprite):
@@ -352,7 +363,14 @@ def update_player_ammo(sprite):
         sprite.update_text(text='0 / 0')
 
 def open_shop():
-    pass
+    shop.set_visible(not shop.is_visible)
+
+def buy_item(cell):
+    if pl.balance >= cell.cost:
+        pl.balance -= cell.cost
+        gun = cell.item.copy()
+        gun.cord_x = pl.cord_x
+        gun.cord_y = pl.cord_y
 
 
 if __name__ == '__main__':
@@ -376,7 +394,7 @@ if __name__ == '__main__':
 
     # Основные спрайты
     pl = Player((100, 100), '[image_name]')
-    gun = Gun(center_pos=(200, 200), image='[image_name]', ammo=999, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150, shooting_accuracy=0.9)
+    gun = Gun(center_pos=(200, 200), image='[image_name]', ammo=999, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150, shooting_accuracy=0.95)
     gun2 = Gun(center_pos=(300, 200), image='[image_name]', ammo=5, reload_time=1000)
     m1 = Monster((300, 100), '[image_name]')
     m2 = Monster((400, 100), '[image_name]', hp=1)
@@ -389,7 +407,9 @@ if __name__ == '__main__':
     player_ammo = ui.Text(pos=(720, 460), sprite_group=all_sprites)
 
     # Shop
-    # shop = ui.Shop(pos=(400, 0), size=(100, 500), background=)
+    shop = ui.Shop(pos=(590, 60), image_pos=(0, 84), image_size=(210, 312), sprite_group=(ui_sprites, all_sprites), general_sprite_group=(all_sprites, ui_sprites))
+    for _ in range(2):
+        shop.add_item(Gun(bullet_color=(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))), random.randint(0, 2))
 
     # Респавн мобов для тестов
     respawn_monsters = pygame.USEREVENT + 3
@@ -412,7 +432,11 @@ if __name__ == '__main__':
 
                         if shop_button.mouse_clicked():
                             open_shop()
-
+                        
+                for bg in shop.backgrounds:
+                    if bg.mouse_clicked():
+                        buy_item(bg)
+                        
                 if can_shoot:
                     pl.on_clicked(event)
             
