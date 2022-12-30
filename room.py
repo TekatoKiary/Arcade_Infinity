@@ -1,16 +1,13 @@
 import random
-
 import pygame
 import pytmx
 from others import TILED_MAP_DIR, PICTURE_WAllS
 import others
 
-
-# Очень непонятное изменение кода. Сократилось на около 20 строк, но это мало с тем, сколько я представлял.
-# Возможно, верну как было до этого коммита
-
 # комната 704*704
 # протяженность коридора 512 - 32
+is_stay_gates = False  # Стоят ли ворота. Она понадобилась в одном деле
+
 
 class RoomCorridor:
 
@@ -24,6 +21,7 @@ class RoomCorridor:
         self.picture_walls = dict()
         self.top_wall = False  # есть наверху полная стена или там коридор
         self.redrawing = True
+        self.walls_gates = dict()
 
     def render(self, screen, x_speed, y_speed, player):
         x_speed, y_speed = self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(2),
@@ -37,8 +35,6 @@ class RoomCorridor:
         self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, [2],
                         functions=[self.redrawing_player],
                         player=player)
-        #
-        self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(3, len(self.map.layers)))
         if self.redrawing:
             player.draw()
 
@@ -98,6 +94,8 @@ class RoomCorridor:
                                 *self.picture_walls[f'{x} {y}'][-1], 0)
                             screen.blit(image, (x_pos + x * self.tile_size, y_pos + y * self.tile_size))
                             continue
+                    if layer == 0 and y == 43 and type(self.walls_gates['bottom']) != Gate:
+                        continue
                     image = room.get_tile_image(x, y, layer)
                     if image:
                         screen.blit(image, (x_pos + x * self.tile_size, y_pos + y * self.tile_size))
@@ -126,23 +124,33 @@ class RoomCorridor:
 class Room(RoomCorridor):
     def __init__(self, x, y, filename):
         super(Room, self).__init__(x, y, filename)
-        self.walls = []
 
     def render(self, screen, x_speed, y_speed, player):
         x_speed, y_speed = super(Room, self).render(screen, x_speed, y_speed, player)
-        for wall in self.walls:
+        for key, wall in self.walls.items():
             # Верхняя стена не должна накладываться на персонажа, а должно быть наоборот. Поэтому
-            if wall.filename.find('top') != -1:
-                x_speed, y_speed = self.blit_tiles(screen, wall, self.x, self.y, wall.width,
-                                                   wall.height, [0], x_speed=x_speed, y_speed=y_speed, player=player,
-                                                   functions=[self.is_collising, self.is_render_picture_walls],
-                                                   layers_collide=0, is_top_wall=True)
+            if key == 'top':
+                if type(wall) == Gate:
+                    if is_stay_gates:
+                        wall.render(screen)
+                else:
+                    x_speed, y_speed = self.blit_tiles(screen, wall, self.x, self.y, wall.width,
+                                                       wall.height, [0], x_speed=x_speed, y_speed=y_speed,
+                                                       player=player,
+                                                       functions=[self.is_collising, self.is_render_picture_walls],
+                                                       layers_collide=0, is_top_wall=True)
+                continue
+        self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(3, len(self.map.layers)))
         return x_speed, y_speed
 
     def render_passing_walls(self, screen, x_speed, y_speed, player):
         super(Room, self).render_passing_walls(screen, player)
-        for wall in self.walls:
-            if wall.filename.find('top') != -1:
+        for key, wall in self.walls.items():
+            if key == 'top':
+                continue
+            if type(wall) == Gate:
+                if is_stay_gates:
+                    wall.render(screen)
                 continue
             is_bottom = ((self.height - 3) * self.tile_size) if wall.filename.find(
                 'bottom') != -1 else 0  # если нижняя стена
@@ -154,12 +162,22 @@ class Room(RoomCorridor):
         return x_speed, y_speed
 
     def set_walls(self, left, right, top, bottom):
-        self.walls = []
-        walls = ['left' if left else 0, 'right' if right else 0, 'top' if top else 0, 'bottom' if bottom else 0]
-        for i in walls:
-            if i:
-                self.walls.append(pytmx.load_pygame(f'{TILED_MAP_DIR}\\{i}_wall.tmx'))
-        self.top_wall = walls[2]
+        # Либо стена, либо коридор, где на концах расположены ворота
+        self.walls = {
+            'left': pytmx.load_pygame(f'{TILED_MAP_DIR}\\left_wall.tmx') if left else
+            Gate(self.x + self.tile_size,
+                 self.y + self.tile_size * self.height // 2 - 7 * self.tile_size, 'vertical'),
+            'right': pytmx.load_pygame(f'{TILED_MAP_DIR}\\right_wall.tmx') if right else
+            Gate(self.x + self.tile_size * self.width - self.tile_size * 2,
+                 self.y + self.tile_size * self.height // 2 - 7 * self.tile_size, 'vertical'),
+            'top': pytmx.load_pygame(f'{TILED_MAP_DIR}\\top_wall.tmx') if top else
+            Gate(self.x + self.tile_size * self.width // 2 - 3 * self.tile_size,
+                 self.y + self.tile_size, 'horizontal', top_or_bottom='top'),
+            'bottom': pytmx.load_pygame(f'{TILED_MAP_DIR}\\bottom_wall.tmx') if bottom else
+            Gate(self.x + self.tile_size * self.width // 2 - 3 * self.tile_size,
+                 self.y + self.tile_size * self.height - self.tile_size * 3, 'horizontal'),
+        }
+        self.top_wall = 0 if type(self.walls['top']) == Gate else 1
         self.set_picture_walls()
 
     def set_picture_walls(self):
@@ -178,6 +196,12 @@ class Room(RoomCorridor):
                 i += 1
             x_pos += 6
 
+    def move(self, x, y):
+        super(Room, self).move(x, y)
+        for key, wall in self.walls.items():
+            if type(wall) == Gate:
+                wall.move(x, y)
+
 
 class Corridor(RoomCorridor):
     def __init__(self, x, y, orientation):
@@ -189,5 +213,47 @@ class Corridor(RoomCorridor):
             self.x += 672
             self.y += 336 - self.tile_size * 13 // 2 - 8
 
+    def render(self, screen, x_speed, y_speed, player):
+        global is_stay_gates
+        is_stay_gates = False if \
+            self.x <= others.WIDTH // 2 <= self.x + self.width * self.tile_size and \
+            self.y <= others.HEIGHT // 2 <= self.y + self.height * self.tile_size else True
+        x_speed, y_speed = super(Corridor, self).render(screen, x_speed, y_speed, player)
+        if not is_stay_gates:
+            self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(3, len(self.map.layers)))
+        return x_speed, y_speed
+
     def render_passing_walls(self, screen, player):
         self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, [2])
+
+
+class Gate:
+    def __init__(self, x, y, orientation, top_or_bottom=False):
+        self.map = pytmx.load_pygame(TILED_MAP_DIR + f'\\{orientation}_gate.tmx')
+        self.speed = 5
+        self.x = x
+        self.y = y
+        self.height = self.map.height
+        self.width = self.map.width
+        self.tile_size = self.map.tilewidth
+        # Чтобы не делать два файла ворот разных размеров (6*3 и 6*4), решил сделать так:
+        self.top = True if top_or_bottom == 'top' else False
+
+    def move(self, x, y):
+        # self.y += self.speed
+        self.x -= x
+        self.y -= y
+
+    def render(self, screen):
+        for layer in range(len(self.map.layers)):
+            for x in range(self.width):
+                for y in range(self.height):
+                    image = self.map.get_tile_image(x, y, layer)
+                    if image:
+                        if self.top and y == 2:
+                            y += 1
+                        screen.blit(image, (self.x + self.tile_size * x,
+                                            self.y + self.tile_size * y))
+                        if self.top and y == 1:
+                            screen.blit(image, (self.x + self.tile_size * x,
+                                                self.y + self.tile_size * (1 + y)))

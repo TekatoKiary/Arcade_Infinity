@@ -107,13 +107,11 @@ class Labyrinth:
                             room.x, room.y, room.x + room.width * room.tile_size,
                             room.y + room.height * room.tile_size):
                 x, y = room.render_passing_walls(screen, x, y, player)
-
         for corridor in self.corridors:
             if collide_rect(0, 0, others.WIDTH, others.HEIGHT,
                             corridor.x, corridor.y, corridor.x + corridor.width * corridor.tile_size,
                             corridor.y + corridor.height * corridor.tile_size):
                 corridor.render_passing_walls(screen, player)
-
         player.move()
         if x or y:
             [i.move(x, y) for i in self.rooms]

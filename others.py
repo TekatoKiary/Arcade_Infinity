@@ -1,7 +1,6 @@
 import os
 import sys
 import pygame
-import pytmx
 
 # Функции и костанты
 TILED_MAP_DIR = 'map\\ready_map'
@@ -12,6 +11,7 @@ FPS = 60
 PICTURE_WAllS = [
     TILED_MAP_DIR + f'\\picture_wall{i}.tmx' for i in range(1, 9)
 ]
+
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('sprites', name)
