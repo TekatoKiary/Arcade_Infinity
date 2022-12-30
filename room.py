@@ -133,6 +133,8 @@ class Room(RoomCorridor):
                 if type(wall) == Gate:
                     if is_stay_gates:
                         wall.render(screen)
+                    else:
+                        wall.cnt = 0
                 else:
                     x_speed, y_speed = self.blit_tiles(screen, wall, self.x, self.y, wall.width,
                                                        wall.height, [0], x_speed=x_speed, y_speed=y_speed,
@@ -151,6 +153,8 @@ class Room(RoomCorridor):
             if type(wall) == Gate:
                 if is_stay_gates:
                     wall.render(screen)
+                else:
+                    wall.cnt = 0
                 continue
             is_bottom = ((self.height - 3) * self.tile_size) if wall.filename.find(
                 'bottom') != -1 else 0  # если нижняя стена
@@ -228,32 +232,56 @@ class Corridor(RoomCorridor):
 
 
 class Gate:
+    # коллизия добавится, но скорее всего позже всех
     def __init__(self, x, y, orientation, top_or_bottom=False):
         self.map = pytmx.load_pygame(TILED_MAP_DIR + f'\\{orientation}_gate.tmx')
-        self.speed = 5
-        self.x = x
-        self.y = y
-        self.height = self.map.height
-        self.width = self.map.width
-        self.tile_size = self.map.tilewidth
         # Чтобы не делать два файла ворот разных размеров (6*3 и 6*4), решил сделать так:
         self.top = True if top_or_bottom == 'top' else False
+        self.x = x
+        self.y = y
+        self.height = self.map.height + (1 if self.top else 0)
+        self.width = self.map.width
+        self.tile_size = self.map.tilewidth
+        self.orientation = orientation
+        self.cnt = 0  # макс 120
+        self.step = 60 // self.height
 
     def move(self, x, y):
-        # self.y += self.speed
         self.x -= x
         self.y -= y
 
     def render(self, screen):
-        for layer in range(len(self.map.layers)):
+        t = False
+        if self.orientation == 'vertical' and self.cnt < 60:
+            self.increment_step()
+            return
+        for y in range(self.height):
             for x in range(self.width):
-                for y in range(self.height):
-                    image = self.map.get_tile_image(x, y, layer)
+                for layer in range(len(self.map.layers)):
+                    if self.top and y >= 2:
+                        image = self.map.get_tile_image(x, y - 1, layer)
+                    else:
+                        image = self.map.get_tile_image(x, y, layer)
                     if image:
-                        if self.top and y == 2:
-                            y += 1
-                        screen.blit(image, (self.x + self.tile_size * x,
-                                            self.y + self.tile_size * y))
-                        if self.top and y == 1:
+                        if self.orientation == 'horizontal' and \
+                                self.cnt // self.step == y:
+                            image = pygame.transform.chop(image, [0,
+                                                                  int(self.tile_size * (
+                                                                          self.cnt % self.step) / self.step), 0,
+                                                                  self.tile_size - int(self.tile_size * (
+                                                                          self.cnt % self.step) / self.step)])
+                            t = True
+                        if self.orientation == 'horizontal':
                             screen.blit(image, (self.x + self.tile_size * x,
-                                                self.y + self.tile_size * (1 + y)))
+                                                self.y + self.tile_size * y - int(
+                                                    self.tile_size * self.cnt / self.step) + self.tile_size * self.height))
+                        else:
+                            screen.blit(image, (self.x + self.tile_size * x,
+                                                self.y + self.tile_size * y))
+
+            if t:
+                self.increment_step()
+                return
+
+    def increment_step(self):
+        self.cnt += 1 if is_stay_gates and self.cnt < 60 else 0
