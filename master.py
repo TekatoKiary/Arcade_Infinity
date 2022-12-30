@@ -38,6 +38,9 @@ class Player(pygame.sprite.Sprite):
         self.cord_y = self.rect.y
 
         self.balance = 10
+    
+    def take_damage(self, damage):
+        self.hp_left -= damage
 
     def on_clicked(self, event):
         if event.button == 1:
@@ -87,11 +90,14 @@ class Player(pygame.sprite.Sprite):
 
 
 class Gun(pygame.sprite.Sprite):
-    def __init__(self, center_pos, image, destroy_bullets=True, damage_type='point', bullet_color=(128, 128, 128), bullet_size=(10, 10), bullet_speed=300, fire_rate=300, \
-        shooting_accuracy=1, damage=0, splash_damage=0, splash_radius=0, ammo=10, reload_time=3000, reload_event=1, shoot_event=2):
+    def __init__(self, name='gun', center_pos=(0, 0), image='', destroy_bullets=True, damage_type='point', bullet_color=(128, 128, 128), \
+        bullet_size=(10, 10), bullet_speed=300, fire_rate=300, shooting_accuracy=1, damage=0, splash_damage=0, splash_radius=0, ammo=10, \
+            reload_time=3000, reload_event=1, shoot_event=2):
 
         super().__init__(all_sprites)
         self.add(gun_sprites)
+
+        self.name = name
 
         # Их не изменять
         self.destroy_bullets = destroy_bullets
@@ -336,6 +342,18 @@ def update_hp_bar(bar, health_percent):
 def update_player_balance(sprite):
         sprite.update_text(text=pl.balance)
 
+def update_player_ammo(sprite):
+    if pl.active_gun.__class__.__name__ != 'Hands':
+        if pl.active_gun.is_reloading_now:
+            sprite.update_text(text=f'reloading..')
+        else:
+            sprite.update_text(text=f'{pl.active_gun.ammo_amount} / {pl.active_gun.ammo}')
+    else:
+        sprite.update_text(text='0 / 0')
+
+def open_shop():
+    pass
+
 
 if __name__ == '__main__':
     pygame.init()
@@ -358,18 +376,20 @@ if __name__ == '__main__':
 
     # Основные спрайты
     pl = Player((100, 100), '[image_name]')
-    gun = Gun((200, 200), '[image_name]', ammo=999, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150, shooting_accuracy=0.9)
-    gun2 = Gun((300, 200), '[image_name]', ammo=5, reload_time=1000)
+    gun = Gun(center_pos=(200, 200), image='[image_name]', ammo=999, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150, shooting_accuracy=0.9)
+    gun2 = Gun(center_pos=(300, 200), image='[image_name]', ammo=5, reload_time=1000)
     m1 = Monster((300, 100), '[image_name]')
     m2 = Monster((400, 100), '[image_name]', hp=1)
 
     # Ui
-    player_info = ui.Info(pos=(20, 20), sprite_group=(all_sprites, ui_sprites), image_pos=(56, 0), image_size=(154, 48))
-    player_hp_bar = ui.Info(pos=(20 + 54, 20 + 4), image_pos=(214, 0), image_size=(94, 18), sprite_group=(all_sprites, ui_sprites))
+    player_info = ui.Img(pos=(20, 20), sprite_group=(all_sprites, ui_sprites), image_pos=(56, 0), image_size=(154, 48))
+    player_hp_bar = ui.Img(pos=(20 + 54, 20 + 4), image_pos=(214, 0), image_size=(94, 18), sprite_group=(all_sprites, ui_sprites))
     shop_button = ui.Buttons(pos=(720, 20), sprite_group=(all_sprites, ui_sprites), image_pos=(192, 52), image_size=(60, 28))
     player_balance = ui.Text(pos=(90, 50), sprite_group=all_sprites)
-    mini_pl_image = pygame.transform.scale(pl.image, (pl.image.get_width() * 0.5, pl.image.get_height() * 0.5))
-    character_icon = ui.Img((20 + 52 / 2 - pl.image.get_width() / 4, 20 + 48 / 2 - pl.image.get_height() / 4), image=mini_pl_image, sprite_group=(all_sprites, ui_sprites))
+    player_ammo = ui.Text(pos=(720, 460), sprite_group=all_sprites)
+
+    # Shop
+    # shop = ui.Shop(pos=(400, 0), size=(100, 500), background=)
 
     # Респавн мобов для тестов
     respawn_monsters = pygame.USEREVENT + 3
@@ -387,12 +407,11 @@ if __name__ == '__main__':
                 can_shoot = True
                 for sprite in ui_sprites:
 
-                    if sprite.mouse_clicked():
+                    if sprite.mouse_hovered():
                         can_shoot = False
 
                         if shop_button.mouse_clicked():
-                            print('Take the damage!')
-                            pl.hp_left -= 10
+                            open_shop()
 
                 if can_shoot:
                     pl.on_clicked(event)
@@ -419,6 +438,7 @@ if __name__ == '__main__':
         pl.move()
         update_hp_bar(player_hp_bar, pl.hp_left / pl.max_hp)
         update_player_balance(player_balance)
+        update_player_ammo(player_ammo)
 
         screen.fill((0, 0, 0))
 
