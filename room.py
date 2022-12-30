@@ -94,7 +94,7 @@ class RoomCorridor:
                                 *self.picture_walls[f'{x} {y}'][-1], 0)
                             screen.blit(image, (x_pos + x * self.tile_size, y_pos + y * self.tile_size))
                             continue
-                    if layer == 0 and y == 43 and type(self.walls_gates['bottom']) != Gate:
+                    if type(self) == Room and layer == 0 and y == 43 and type(self.walls_gates['bottom']) != Gate:
                         continue
                     image = room.get_tile_image(x, y, layer)
                     if image:
@@ -127,7 +127,7 @@ class Room(RoomCorridor):
 
     def render(self, screen, x_speed, y_speed, player):
         x_speed, y_speed = super(Room, self).render(screen, x_speed, y_speed, player)
-        for key, wall in self.walls.items():
+        for key, wall in self.walls_gates.items():
             # Верхняя стена не должна накладываться на персонажа, а должно быть наоборот. Поэтому
             if key == 'top':
                 if type(wall) == Gate:
@@ -145,7 +145,7 @@ class Room(RoomCorridor):
 
     def render_passing_walls(self, screen, x_speed, y_speed, player):
         super(Room, self).render_passing_walls(screen, player)
-        for key, wall in self.walls.items():
+        for key, wall in self.walls_gates.items():
             if key == 'top':
                 continue
             if type(wall) == Gate:
@@ -163,7 +163,7 @@ class Room(RoomCorridor):
 
     def set_walls(self, left, right, top, bottom):
         # Либо стена, либо коридор, где на концах расположены ворота
-        self.walls = {
+        self.walls_gates = {
             'left': pytmx.load_pygame(f'{TILED_MAP_DIR}\\left_wall.tmx') if left else
             Gate(self.x + self.tile_size,
                  self.y + self.tile_size * self.height // 2 - 7 * self.tile_size, 'vertical'),
@@ -177,7 +177,7 @@ class Room(RoomCorridor):
             Gate(self.x + self.tile_size * self.width // 2 - 3 * self.tile_size,
                  self.y + self.tile_size * self.height - self.tile_size * 3, 'horizontal'),
         }
-        self.top_wall = 0 if type(self.walls['top']) == Gate else 1
+        self.top_wall = 0 if type(self.walls_gates['top']) == Gate else 1
         self.set_picture_walls()
 
     def set_picture_walls(self):
@@ -198,7 +198,7 @@ class Room(RoomCorridor):
 
     def move(self, x, y):
         super(Room, self).move(x, y)
-        for key, wall in self.walls.items():
+        for key, wall in self.walls_gates.items():
             if type(wall) == Gate:
                 wall.move(x, y)
 
