@@ -365,10 +365,10 @@ def update_player_ammo(sprite):
 def open_shop():
     shop.set_visible(not shop.is_visible)
 
-def buy_item(cell):
-    if pl.balance >= cell.cost:
-        pl.balance -= cell.cost
-        gun = cell.item.copy()
+def buy_item(item):
+    if pl.balance >= item.cost:
+        pl.balance -= item.cost
+        gun = item.content.copy()
         gun.cord_x = pl.cord_x
         gun.cord_y = pl.cord_y
 
@@ -382,6 +382,7 @@ if __name__ == '__main__':
     FPS = 60
     running = True
 
+    # Группы
     all_sprites = pygame.sprite.Group()
     player_sprite = pygame.sprite.Group()
     gun_sprites = pygame.sprite.Group()
@@ -407,9 +408,13 @@ if __name__ == '__main__':
     player_ammo = ui.Text(pos=(720, 460), sprite_group=all_sprites)
 
     # Shop
-    shop = ui.Shop(pos=(590, 60), image_pos=(0, 84), image_size=(210, 312), sprite_group=(ui_sprites, all_sprites), general_sprite_group=(all_sprites, ui_sprites))
-    for _ in range(2):
-        shop.add_item(Gun(bullet_color=(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))), random.randint(0, 2))
+    shop = ui.Shop(pos=(590, 60), image_pos=(0, 84), image_size=(210, 312), sprite_group=(ui_sprites, all_sprites))
+
+    # Тестовое добавление товаров в магазин
+    for _ in range(25):
+        gun = Gun(bullet_color=(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
+        item = ui.ShopItems(gun, random.randint(1, 3))
+        shop.add_item(item)
 
     # Респавн мобов для тестов
     respawn_monsters = pygame.USEREVENT + 3
@@ -426,16 +431,17 @@ if __name__ == '__main__':
             if event.type == pygame.MOUSEBUTTONDOWN:
                 can_shoot = True
                 for sprite in ui_sprites:
-
+                    # Если навелся на UI, то стрелять нельзя
                     if sprite.mouse_hovered():
                         can_shoot = False
 
                         if shop_button.mouse_clicked():
                             open_shop()
-                        
+                
+                # Проверка нажатия на кнопку покупки
                 for bg in shop.backgrounds:
-                    if bg.mouse_clicked():
-                        buy_item(bg)
+                    if bg.mouse_clicked() and shop.is_visible:
+                        buy_item(bg.item)
                         
                 if can_shoot:
                     pl.on_clicked(event)
