@@ -364,7 +364,15 @@ def update_player_ammo(sprite):
 
 def open_shop():
     shop.set_visible(not shop.is_visible)
+    shop.set_page(0)
 
+def flip_shop_page():
+    if shop.button_next.mouse_clicked() and shop.current_page + 1 <= len(shop.items_list) // 12:
+        shop.flip_page(1)
+    
+    if shop.button_back.mouse_clicked() and shop.current_page - 1 >= 0:
+        shop.flip_page(-1)
+    
 def buy_item(item):
     if pl.balance >= item.cost:
         pl.balance -= item.cost
@@ -437,10 +445,15 @@ if __name__ == '__main__':
 
                         if shop_button.mouse_clicked():
                             open_shop()
+                        
+                        # Листать страницы магазина
+                        if shop.button_back.mouse_clicked() or shop.button_next.mouse_clicked():
+                            flip_shop_page()
+
                 
                 # Проверка нажатия на кнопку покупки
                 for bg in shop.backgrounds:
-                    if bg.mouse_clicked() and shop.is_visible:
+                    if bg.mouse_clicked() and shop.is_visible and bg in all_sprites:
                         buy_item(bg.item)
                         
                 if can_shoot:
