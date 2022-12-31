@@ -126,7 +126,7 @@ class Gun(pygame.sprite.Sprite):
         self.image = pygame.Surface((25, 25), pygame.SRCALPHA, 32)
         self.rotate_image = self.image
         self.rect = self.image.get_rect()
-        pygame.draw.rect(self.image, (128, 255, 128), (0, 0, 25, 25), 0)
+        pygame.draw.rect(self.image, self.bullet_color, (0, 0, 25, 25), 0)
 
         self.rect.x = center_pos[0] - self.rotate_image.get_width() / 2
         self.rect.y = center_pos[1] - self.rotate_image.get_height() / 2
@@ -188,7 +188,6 @@ class Gun(pygame.sprite.Sprite):
                 fire_rate=self.fire_rate, shooting_accuracy=self.shooting_accuracy, damage=self.damage, splash_damage=self.splash_damage, \
                     splash_radius=self.splash_radius, ammo=self.ammo, reload_time=self.reload_time, reload_event=self.reload_event_num, \
                         shoot_event=self.shoot_event_num)
-
 
 class Bullet(pygame.sprite.Sprite):
     # damage_type: point, splash
@@ -410,10 +409,17 @@ if __name__ == '__main__':
 
     # Ui
     player_info = ui.Img(pos=(20, 20), sprite_group=(all_sprites, ui_sprites), image_pos=(56, 0), image_size=(154, 48))
+    # Переделать
+    player_icon = pygame.transform.scale(pl.image, (pl.image.get_width() / 2, pl.image.get_height() / 2))
+    player_info.image.blit(player_icon, (13, 12, pl.image.get_width(), pl.image.get_height()))
+    # /\ /\ /\ /\ /\ /\
     player_hp_bar = ui.Img(pos=(20 + 54, 20 + 4), image_pos=(214, 0), image_size=(94, 18), sprite_group=(all_sprites, ui_sprites))
     shop_button = ui.Buttons(pos=(720, 20), sprite_group=(all_sprites, ui_sprites), image_pos=(192, 52), image_size=(60, 28))
     player_balance = ui.Text(pos=(90, 50), sprite_group=all_sprites)
     player_ammo = ui.Text(pos=(720, 460), sprite_group=all_sprites)
+    info1 = ui.Text(pos=(30, 400), sprite_group=all_sprites, text='press W, A, S, D to move', size=14)
+    info2 = ui.Text(pos=(30, 430), sprite_group=all_sprites, text='press F to take the gun', size=14)
+    info2 = ui.Text(pos=(30, 460), sprite_group=all_sprites, text='press G to drop the gun', size=14)
 
     # Shop
     shop = ui.Shop(pos=(590, 60), image_pos=(0, 84), image_size=(210, 312), sprite_group=(ui_sprites, all_sprites))
