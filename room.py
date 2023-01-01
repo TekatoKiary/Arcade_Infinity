@@ -18,6 +18,7 @@ class RoomCorridor:
         self.height = self.map.height
         self.width = self.map.width
         self.tile_size = self.map.tilewidth
+        self.filename_room = filename
         self.picture_walls = dict()
         self.top_wall = False  # есть наверху полная стена или там коридор
         self.redrawing = True
@@ -25,7 +26,7 @@ class RoomCorridor:
 
     def render(self, screen, x_speed, y_speed, player):
         x_speed, y_speed = self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(2),
-                                           functions=[self.is_render_picture_walls, self.is_collising],
+                                           functions=[self.is_render_picture_walls, self.is_collide],
                                            player=player, x_speed=x_speed,
                                            y_speed=y_speed)
         return x_speed, y_speed
@@ -36,7 +37,7 @@ class RoomCorridor:
                         functions=[self.redrawing_player],
                         player=player)
         if self.redrawing:
-            player.draw()
+            player.draw(screen)
 
     def rect_in_screen(self, x, y, width_dec, height_dec):
         """Возвращает начальные и конечные координаты ячеек комнаты, которые попадают на экран"""
@@ -57,7 +58,7 @@ class RoomCorridor:
         self.x -= x
         self.y -= y
 
-    def is_collising(self, player, image, x, y, x_speed, y_speed):
+    def is_collide(self, player, image, x, y, x_speed, y_speed):
         # Можно сказать, создаем спрайт ячейки для проверки коллизии
         if any([x_speed, y_speed]):
             cell = pygame.sprite.Sprite()
@@ -99,9 +100,9 @@ class RoomCorridor:
                     image = room.get_tile_image(x, y, layer)
                     if image:
                         screen.blit(image, (x_pos + x * self.tile_size, y_pos + y * self.tile_size))
-                        if self.is_collising in functions and layer == layers_collide:
-                            x_speed, y_speed = self.is_collising(player, image, x_pos + x * self.tile_size,
-                                                                 y_pos + y * self.tile_size, x_speed, y_speed)
+                        if self.is_collide in functions and layer == layers_collide:
+                            x_speed, y_speed = self.is_collide(player, image, x_pos + x * self.tile_size,
+                                                               y_pos + y * self.tile_size, x_speed, y_speed)
                         if self.redrawing_player in functions:
                             self.redrawing_player(player, x, y)
         if x_speed is not None:
@@ -139,7 +140,7 @@ class Room(RoomCorridor):
                     x_speed, y_speed = self.blit_tiles(screen, wall, self.x, self.y, wall.width,
                                                        wall.height, [0], x_speed=x_speed, y_speed=y_speed,
                                                        player=player,
-                                                       functions=[self.is_collising, self.is_render_picture_walls],
+                                                       functions=[self.is_collide, self.is_render_picture_walls],
                                                        layers_collide=0, is_top_wall=True)
                 continue
         self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(3, len(self.map.layers)))
@@ -161,7 +162,7 @@ class Room(RoomCorridor):
             # если правая стена:
             is_right = ((self.width - 2) * self.tile_size) if wall.filename.find('right') != -1 else 0
             x_speed, y_speed = self.blit_tiles(screen, wall, is_right + self.x, is_bottom + self.y, wall.width,
-                                               wall.height, range(len(wall.layers)), functions=[self.is_collising],
+                                               wall.height, range(len(wall.layers)), functions=[self.is_collide],
                                                x_speed=x_speed, y_speed=y_speed, player=player, layers_collide=0)
         return x_speed, y_speed
 
@@ -274,7 +275,8 @@ class Gate:
                         if self.orientation == 'horizontal':
                             screen.blit(image, (self.x + self.tile_size * x,
                                                 self.y + self.tile_size * y - int(
-                                                    self.tile_size * self.cnt / self.step) + self.tile_size * self.height))
+                                                    self.tile_size * self.cnt / self.step) + self.tile_size *
+                                                self.height))
                         else:
                             screen.blit(image, (self.x + self.tile_size * x,
                                                 self.y + self.tile_size * y))

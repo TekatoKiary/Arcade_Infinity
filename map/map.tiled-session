@@ -3,10 +3,10 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "ready_map/mainlevbuild.tsx",
+    "activeFile": "ready_map/map1.tmx",
     "expandedProjectPaths": [
-        ".",
-        "ready_map"
+        "ready_map",
+        "."
     ],
     "file.lastUsedOpenFilter": "Все файлы (*)",
     "fileStates": {
@@ -59,8 +59,8 @@
             "scale": 0.75,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 328,
-                "y": 431.33333333333337
+                "x": 352,
+                "y": 352.66666666666663
             }
         },
         "ready_map/begin_room.tmx#mainlevbuild": {
@@ -143,16 +143,16 @@
             "scale": 1,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 255,
-                "y": 651.5
+                "x": 462.5,
+                "y": 306.5
             }
         },
         "ready_map/map2.tmx": {
             "scale": 0.75,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 421.33333333333326,
-                "y": 299.33333333333337
+                "x": 470,
+                "y": 306
             }
         },
         "ready_map/map3.tmx": {
@@ -258,8 +258,8 @@
             "scale": 0.7570312499999999,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 124.82972136222915,
-                "y": -91.8059855521156
+                "x": 351.37254901960785,
+                "y": 352.03302373581016
             }
         },
         "ready_map/top_wall.tmx": {
@@ -304,18 +304,18 @@
     ],
     "project": "map.tiled-project",
     "recentFiles": [
+        "ready_map/map2.tmx",
+        "ready_map/mainlevbuild.tsx",
+        "ready_map/room_with_chest.tmx",
+        "ready_map/begin_room.tmx",
+        "ready_map/map1.tmx",
         "ready_map/horizontal_gate.tmx",
         "ready_map/vertical_gate.tmx",
         "ready_map/vertical_corridor.tmx",
         "ready_map/top_wall.tmx",
         "ready_map/right_wall.tmx",
-        "ready_map/begin_room.tmx",
         "ready_map/map3.tmx",
-        "ready_map/map2.tmx",
-        "ready_map/map1.tmx",
-        "ready_map/picture_wall3.tmx",
-        "ready_map/end_room.tmx",
-        "ready_map/left_wall.tmx"
+        "ready_map/picture_wall3.tmx"
     ],
     "tileset.lastUsedFormat": "tsx",
     "tileset.spacing": 0,

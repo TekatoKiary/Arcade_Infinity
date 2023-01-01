@@ -11,6 +11,29 @@ FPS = 60
 PICTURE_WAllS = [
     TILED_MAP_DIR + f'\\picture_wall{i}.tmx' for i in range(1, 9)
 ]
+barrels_coords = {'map1': [[]], 'map2': [[]], 'map3': [[]]}
+# Пока только один вариант на каждую карту. Будет время добавлю другие
+barrels_coords['map1'] += [[*((i, 13 - 1) for i in range(2, 42, 2)),
+                            *((10, i - 1) for i in range(14, 30, 2)),
+                            *((33, i - 1) for i in range(14, 30, 2)),
+                            *((i, 30 - 1) for i in range(2, 42, 2)),
+                            ]]
+
+barrels_coords['map2'] += [[*((25, i - 1) for i in range(5, 19, 2)),
+                            *((17, i - 1) for i in range(5, 19, 2)),
+                            *((i, 18 - 1) for i in range(2, 17, 2)),
+                            *((i, 18 - 1) for i in range(40, 25, -2)),
+                            *((i, 25 - 1) for i in range(2, 17, 2)),
+                            *((i, 25 - 1) for i in range(40, 25, -2)),
+                            *((25, i - 1) for i in range(26, 43, 2)),
+                            *((17, i - 1) for i in range(26, 43, 2)),
+                            ]]
+
+barrels_coords['map3'] += [[*((i, 15 - 1) for i in range(13, 30, 2)),
+                            *((12, i - 1) for i in range(16, 31, 2)),
+                            *((30, i - 1) for i in range(16, 31, 2)),
+                            *((i, 32 - 1) for i in range(13, 30, 2)),
+                            ]]
 
 
 def load_image(name, colorkey=None):

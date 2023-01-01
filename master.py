@@ -1,9 +1,9 @@
 import pygame
 import random
-
 import others
-from others import collide_rect, FPS, load_image
+from others import collide_rect, FPS, barrels_coords
 from room import Room, Corridor
+from sprites import Player, Barrel
 
 
 class Labyrinth:
@@ -48,6 +48,15 @@ class Labyrinth:
                     x, y = x + kx, y + ky
                     room = Room(x, y, f'map{random.randrange(1, 4)}') \
                         if i < 2 else Room(x, y, f'end_room')
+                    if barrels_coords.get(room.filename_room):
+                        random_coords = random.choice(barrels_coords[room.filename_room])
+                        for i in random_coords:
+                            if i[0] == 4 and i[1] == 12:
+                                # простая лазейка для того, чтобы мы посмотрели, как происходит коллизия
+                                # Его не будет в конечном итоге
+                                continue
+                            barrel_group.add(Barrel(room.x + room.tile_size * i[0],
+                                                    room.y + room.tile_size * i[1]))
                     self.map_list[y][x] = room
                     self.rooms.append(room)
                     coords_all_room.append((x, y))
@@ -63,6 +72,15 @@ class Labyrinth:
                             self.rooms[3] != self.map_list[y + ky][x + kx]:
                         room = Room(x, y,
                                     f'map{random.randrange(1, 4)}' if chest_room != count_room else 'room_with_chest')
+                        if barrels_coords.get(room.filename_room):
+                            random_coords = random.choice(barrels_coords[room.filename_room])
+                            for i in random_coords:
+                                if i[0] == 4 and i[1] == 12:
+                                    # простая лазейка для того, чтобы мы посмотрели, как происходит коллизия
+                                    # Его не будет в конечном итоге
+                                    continue
+                                barrel_group.add(Barrel(room.x + room.tile_size * i[0],
+                                                        room.y + room.tile_size * i[1]))
                         self.map_list[y][x] = room
                         self.rooms.append(room)
                         coords_all_room.append((x, y))
@@ -88,6 +106,7 @@ class Labyrinth:
             self.map_list[y][x].set_walls(*walls)
         [i.move(x_move, y_move) for i in self.rooms]
         [i.move(x_move, y_move) for i in self.corridors]
+        [i.move(x_move, y_move) for i in barrel_group]
 
     def update(self, screen):
         x, y = move()
@@ -101,7 +120,8 @@ class Labyrinth:
                             corridor.x, corridor.y, corridor.x + corridor.width * corridor.tile_size,
                             corridor.y + corridor.height * corridor.tile_size):
                 x, y = corridor.render(screen, x, y, player)
-        player.draw()
+        barrel_group.draw(screen)
+        player.draw(screen)
         for room in self.rooms:
             if collide_rect(0, 0, others.WIDTH, others.HEIGHT,
                             room.x, room.y, room.x + room.width * room.tile_size,
@@ -113,29 +133,16 @@ class Labyrinth:
                             corridor.y + corridor.height * corridor.tile_size):
                 corridor.render_passing_walls(screen, player)
         player.move()
+        print(x, y, end=' ')
+        for i in barrel_group:
+            if not any([x, y]):
+                break
+            x, y = i.is_collide(player, x, y)
+        print(x, y)
         if x or y:
             [i.move(x, y) for i in self.rooms]
             [i.move(x, y) for i in self.corridors]
-
-
-class Player(pygame.sprite.Sprite):
-    # Временно
-    def __init__(self, ):
-        super(Player, self).__init__()
-        self.image = load_image('Adventurer\\adventurer_stand.png', -1)
-        self.image = pygame.transform.scale(self.image,
-                                            (self.image.get_rect().width * 2.5, self.image.get_rect().height * 2.5))
-        self.rect = self.image.get_rect()
-        self.rect.x = self.x = others.WIDTH // 2
-        self.rect.y = self.y = others.HEIGHT // 2
-        self.mask = pygame.mask.from_surface(self.image)
-
-    def draw(self):
-        screen.blit(self.image, self.rect)
-
-    def move(self):
-        self.rect.x = self.x = others.WIDTH // 2 - self.rect.width // 2
-        self.rect.y = self.y = others.HEIGHT // 2 - self.rect.height // 2
+            [i.move(x, y) for i in barrel_group]
 
 
 def move():
@@ -156,12 +163,16 @@ if __name__ == '__main__':
     pygame.init()
     pygame.display.set_caption('Game')
     screen = pygame.display.set_mode(others.SIZE)
+    # others.SIZE = others.WIDTH, others.HEIGHT = pygame.display.Info().current_w, pygame.display.Info().current_h
     # pygame.FULLSCREEN | pygame.DOUBLEBUF
     clock = pygame.time.Clock()
 
     running = 1
-    lab = Labyrinth()
+
     player = Player()
+    barrel_group = pygame.sprite.Group()
+
+    lab = Labyrinth()
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
