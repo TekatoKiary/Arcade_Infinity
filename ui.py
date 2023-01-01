@@ -74,8 +74,9 @@ class Text(pygame.sprite.Sprite):
 
 
 class Shop(pygame.sprite.Sprite):
-    def __init__(self, sprite_group, pos, image_pos, image_size, image='main_ui.png'):
+    def __init__(self, player, sprite_group, pos, image_pos, image_size, image='main_ui.png'):
         super().__init__(sprite_group)
+        self.player = player
 
         self.sprite_group = sprite_group
         self.image = cut_image(load_image(image), image_pos, image_size)
@@ -194,6 +195,20 @@ class Shop(pygame.sprite.Sprite):
         if self.is_visible:
             self.page_counter.add(self.sprite_group)
             self.page_counter.update_text(str(self.current_page + 1))
+
+    def buy_item(self, item):
+        if self.player.balance >= item.cost:
+            self.player.balance -= item.cost
+            gun = item.content.copy()
+            gun.cord_x = self.player.cord_x
+            gun.cord_y = self.player.cord_y
+
+    def flip_shop_page(self):
+        if self.button_next.mouse_clicked() and self.current_page + 1 <= len(self.items_list) // 12:
+            self.flip_page(1)
+        
+        if self.button_back.mouse_clicked() and self.current_page - 1 >= 0:
+            self.flip_page(-1)
 
 
 class ShopItems():
