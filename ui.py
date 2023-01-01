@@ -143,7 +143,6 @@ class Shop(pygame.sprite.Sprite):
             self.add(self.sprite_group)
         else:
             self.kill()
-
     
     def update_shop_buttons(self):
         if self.is_visible:
@@ -155,8 +154,6 @@ class Shop(pygame.sprite.Sprite):
 
             self.button_next.rect.x = self.rect.x + self.image.get_width() - self.button_next.image.get_width()
             self.button_next.rect.y = self.rect.y + self.image.get_height()
-
-
         else:
             self.button_back.kill()
             self.button_next.kill()
