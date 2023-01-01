@@ -1,3 +1,9 @@
+# Довавить инвентарь 
+# Добавить destroy_self_in_time= в Bullets()
+
+
+
+
 import pygame
 import random
 import ui
@@ -35,9 +41,14 @@ if __name__ == '__main__':
     running = True
 
     # Основные спрайты
+        # Список видов оружия: УЗИ, Снайперская винтовка, Автомат 
+        # (несколько видов, например АК47, М4А4, какой-нибудь с цветными пулями), Пистолет, 
+        # Автомат с рикошет-пулями, Гранатомет, Автомат с проходящими сквозь мобов пулями, 
+        # Пушка, стреляющая шаровыми молниями, Пушка с маленьким уроном, но который наносится всех мобам
+        # Расстановщик мин, Пушка с бесконечными патронами
     pl = sprites.Player((100, 100), '[image_name]')
-    gun = sprites.Gun(player=pl, center_pos=(200, 200), image='[image_name]', ammo=999, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150, shooting_accuracy=0.95, damage_type='splash', splash_damage=10, splash_radius=50)
-    gun2 = sprites.Gun(player=pl, center_pos=(300, 200), image='[image_name]', ammo=-1, reload_time=1000, damage_type='splash', splash_damage=100, splash_radius=500)
+    ak47 = sprites.Gun(player=pl, center_pos=(200, 200), image='[image_name]', ammo=999, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150, shooting_accuracy=0.95)
+    pistol = sprites.Gun(player=pl, center_pos=(300, 200), image='[image_name]', ammo=-1, reload_time=1000)
     m1 = sprites.Monster(player=pl, center_pos=(300, 100), image='[image_name]')
     m2 = sprites.Monster(player=pl, center_pos=(400, 100), image='[image_name]', hp=1)
     m3 = sprites.Monster(player=pl, center_pos=(450, 130), image='[image_name]', hp=1)
@@ -61,10 +72,14 @@ if __name__ == '__main__':
     shop = ui.Shop(player=pl, pos=(590, 60), image_pos=(0, 84), image_size=(210, 312), sprite_group=(sprites.ui_sprites, sprites.all_sprites))
 
     # Тестовое добавление товаров в магазин
-    for _ in range(25):
-        gun = sprites.Gun(player=pl, bullet_color=(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)))
-        item = ui.ShopItems(gun, random.randint(1, 3))
-        shop.add_item(item)
+    Uzi = ui.ShopItems(sprites.Gun(player=pl, name='Uzi', fire_rate=100, shooting_accuracy=0.5, damage=5, ammo=30, reload_time=2000), 1)
+    Sniper = ui.ShopItems(sprites.Gun(player=pl, name='Sniper', fire_rate=2000, damage=100, ammo=20, reload_time=3000, bullet_color=(255, 128, 128), bullet_speed=600), 1)
+    GrenadeLauncher = ui.ShopItems(sprites.Gun(player=pl, name='GrenadeLauncher', fire_rate=1000, shooting_accuracy=0.8, damage=30, damage_type='splash', splash_damage=30, splash_radius=100, bullet_color=(64, 64, 196)), 1)
+    BallLightningLauncher = ui.ShopItems(sprites.Gun(player=pl, name='BallLightningLauncher', fire_rate=100, damage=100, ammo=1, reload_time=5000, destroy_bullets=False, bullet_color=(128, 128, 255), bullet_speed=50, bullet_size=(30, 30)), 1)
+    Infinity = ui.ShopItems(sprites.Gun(player=pl, name='Infinity', fire_rate=300, damage=30, bullet_color=(196, 196, 64), ammo=-1), 1)
+    MinePlacer = ui.ShopItems(sprites.Gun(player=pl, bullet_color=(196, 128, 64), damage=100, bullet_speed=0, ammo=5, reload_time=90000, bullet_size=(20, 20)), 1)
+    # Earthquake = ui.ShopItems(sprites.Gun(player=pl, name='Earthquake', bullet_color=(64, 64, 64), fire_rate=500, damage=0, damage_type='splash', splash_damage=10, splash_radius=1000, bullet_speed=2000), 1)
+    shop.add_item(Uzi, Sniper, GrenadeLauncher, BallLightningLauncher, Infinity, MinePlacer)
 
     # Респавн мобов для тестов
     respawn_monsters = pygame.USEREVENT + 3
@@ -105,10 +120,12 @@ if __name__ == '__main__':
                 pl.on_k_pressed(event)
             
             if pl.active_gun != 'Hands':
+                # Перезарядка текущего оружия
                 if event.type == pl.active_gun.reload_event:
                     pl.active_gun.reload_ammo()
                     pygame.time.set_timer(pl.active_gun.reload_event, 0)
                 
+                # Стрельба
                 if event.type == pl.active_gun.shoot_event:
                     if pygame.mouse.get_pressed()[0]:
                         pl.active_gun.shoot()
@@ -116,6 +133,7 @@ if __name__ == '__main__':
                         pygame.time.set_timer(pl.active_gun.shoot_event, 0)
                         pl.active_gun.can_shoot = True
             
+            # Респавн мобов 
             if event.type == respawn_monsters:
                 for monster in sprites.dead_monsters:
                     monster.respawn()

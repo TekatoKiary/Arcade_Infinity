@@ -21,7 +21,8 @@ class Player(pygame.sprite.Sprite):
         self.max_hp = max_hp
         self.hp_left = self.max_hp
 
-        self.active_gun = 'Hands'
+        self.active_gun = Gun(player=self, center_pos=(300, 200), damage=20, image='[image_name]', ammo=-1, reload_time=1000)
+        self.active_gun.is_raised = True
 
         self.image = pygame.Surface((50, 50), pygame.SRCALPHA, 32)
         self.rect = self.image.get_rect()
@@ -34,6 +35,8 @@ class Player(pygame.sprite.Sprite):
         self.cord_y = self.rect.y
 
         self.balance = 10
+
+        self.inventary = []
     
     def take_damage(self, damage):
         self.hp_left -= damage
@@ -90,7 +93,7 @@ class Player(pygame.sprite.Sprite):
 
 class Gun(pygame.sprite.Sprite):
     # damage_type: point, splash
-    def __init__(self, player, name='gun', center_pos=(0, 0), image='', destroy_bullets=True, damage_type='point', bullet_color=(128, 128, 128), \
+    def __init__(self, player, name='gun', can_be_raised=True, center_pos=(0, 0), image='', destroy_bullets=True, damage_type='point', bullet_color=(128, 128, 128), \
         bullet_size=(10, 10), bullet_speed=300, fire_rate=300, shooting_accuracy=1, damage=0, splash_damage=10, splash_radius=150, ammo=10, \
             reload_time=3000, reload_event=1, shoot_event=2):
 
@@ -130,7 +133,7 @@ class Gun(pygame.sprite.Sprite):
         self.cord_x = self.rect.x
         self.cord_y = self.rect.y
 
-        self.can_be_raised = True
+        self.can_be_raised = can_be_raised
         self.is_raised = False
         self.is_reloading_now = False
         self.can_shoot = True
@@ -179,7 +182,7 @@ class Gun(pygame.sprite.Sprite):
             self.rotate()
     
     def copy(self):
-        return Gun(player=self.player, name=self.name, center_pos=self.center_pos, image=self.image, destroy_bullets=self.destroy_bullets, \
+        return Gun(player=self.player, can_be_raised=self.can_be_raised, name=self.name, center_pos=self.center_pos, image=self.image, destroy_bullets=self.destroy_bullets, \
             damage_type=self.damage_type, bullet_color=self.bullet_color, bullet_size=self.bullet_size, bullet_speed=self.bullet_speed, \
                 fire_rate=self.fire_rate, shooting_accuracy=self.shooting_accuracy, damage=self.damage, splash_damage=self.splash_damage, \
                     splash_radius=self.splash_radius, ammo=self.ammo, reload_time=self.reload_time, reload_event=self.reload_event_num, \

@@ -118,10 +118,11 @@ class Shop(pygame.sprite.Sprite):
     def mouse_hovered(self):
         return self.rect.collidepoint(pygame.mouse.get_pos())
     
-    def add_item(self, item):
-        self.items_list.append(item)
-        self.update_backgrounds()
-        self.update_items()
+    def add_item(self, *items):
+        for item in items:
+            self.items_list.append(item)
+            self.update_backgrounds()
+            self.update_items()
     
     def remove_item(self, item):
         self.items_list.remove(item)
