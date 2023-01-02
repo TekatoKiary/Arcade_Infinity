@@ -4,6 +4,7 @@ from others import load_image
 
 barrel_group = pygame.sprite.Group()
 torch_group = pygame.sprite.Group()
+spike_group = pygame.sprite.Group()
 
 
 class Player(pygame.sprite.Sprite):
@@ -118,3 +119,44 @@ class Torch(pygame.sprite.Sprite):
             self.rect.y += y_speed
         player.rect.y -= player.rect.height // 1.01
         return x_speed, y_speed
+
+
+class Spike(pygame.sprite.Sprite):
+
+    # id:
+
+    def __init__(self, x, y):
+        super(Spike, self).__init__(spike_group)
+        self.images = [pygame.transform.scale(load_image(f'Catacombs\\spike_{i}.png', -1),
+                                              (32, 32))
+                       for i in range(5)]
+        self.images.extend([pygame.transform.scale(load_image(f'Catacombs\\spike_{i}.png', -1),
+                                                   (32, 32))
+                            for i in range(4, 0, -1)])
+        self.image = self.images[0]
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.cnt = 0
+        self.step = 10
+        self.mask = pygame.mask.from_surface(self.image)
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+    def move(self, x, y):
+        self.rect.x -= x
+        self.rect.y -= y
+
+    def increment_cnt(self):
+        try:
+            self.image = self.images[self.cnt // self.step]
+        except IndexError:
+            self.image = self.images[0]
+        self.cnt += 1
+        if self.cnt >= 180:
+            self.cnt = 0
+
+    def is_collide(self, player, x_speed, y_speed):
+        # пока в разработке
+        pass

@@ -3,19 +3,18 @@ import random
 import others
 from others import collide_rect, FPS, barrels_coords
 from room import Room, Corridor
-from sprites import Player, Barrel, barrel_group
+from sprites import Player, Barrel, barrel_group, Spike, torch_group, spike_group
 import time
-import sprites
 
 
 # Главные цели:
-# Добавить шипы
 # Добавить коллизию ворот с персонажами
 # Второстепенные цели:
 # Добавить еще карты
 # Добавить еще вариации расстановок бочек, а вместе с ними и шипы
 # Сделать еще оптимизации (на всякий случай)
 
+# Шипы отображаются только в начале, так как в скором времени поменяется способ расстановки бочек и шипов
 
 class Labyrinth:
     def __init__(self):
@@ -39,6 +38,7 @@ class Labyrinth:
         x, y = random.randrange(4), random.randrange(4)
         room = Room(x, y, f'begin_room')
         coords_all_room.append((x, y))
+        Spike(room.x + room.tile_size * 5, room.y + room.tile_size * 30)
 
         x_move = room.x + (-others.WIDTH + room.tile_size * room.width) // 2
         y_move = room.y + (-others.HEIGHT + room.tile_size * room.height) // 2
@@ -107,7 +107,8 @@ class Labyrinth:
         [i.move(x_move, y_move) for i in self.rooms]
         [i.move(x_move, y_move) for i in self.corridors]
         [i.move(x_move, y_move) for i in barrel_group]
-        [i.move(x_move, y_move) for i in sprites.torch_group]
+        [i.move(x_move, y_move) for i in torch_group]
+        [i.move(x_move, y_move) for i in spike_group]
 
     def update(self, screen):
         start_time = time.time()
@@ -122,9 +123,10 @@ class Labyrinth:
                             corridor.x, corridor.y, corridor.x + corridor.width * corridor.tile_size,
                             corridor.y + corridor.height * corridor.tile_size):
                 x, y = corridor.render(screen, x, y, player)
+        spike_group.draw(screen)
         barrel_group.draw(screen)
         player.draw(screen)
-        sprites.torch_group.draw(screen)
+        torch_group.draw(screen)
         for room in self.rooms:
             if collide_rect(0, 0, others.WIDTH, others.HEIGHT,
                             room.x, room.y, room.x + room.width * room.tile_size,
@@ -136,13 +138,13 @@ class Labyrinth:
                             corridor.y + corridor.height * corridor.tile_size):
                 corridor.render_passing_walls(screen, player)
         player.move()
-        [i.increment_cnt() for i in sprites.torch_group]
-
+        [i.increment_cnt() for i in torch_group]
+        [i.increment_cnt() for i in spike_group]
         # for i in barrel_group:
         #     if not any([x, y]):
         #         break
         #     x, y = i.is_collide(player, x, y)
-        for i in sprites.torch_group:
+        for i in torch_group:
             if not any([x, y]):
                 break
             x, y = i.is_collide(player, x, y)
@@ -150,7 +152,8 @@ class Labyrinth:
             [i.move(x, y) for i in self.rooms]
             [i.move(x, y) for i in self.corridors]
             [i.move(x, y) for i in barrel_group]
-            [i.move(x, y) for i in sprites.torch_group]
+            [i.move(x, y) for i in torch_group]
+            [i.move(x, y) for i in spike_group]
         print("--- %s seconds ---" % (time.time() - start_time))
 
 

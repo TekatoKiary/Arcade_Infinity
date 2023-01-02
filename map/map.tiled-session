@@ -3,7 +3,7 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "ready_map/begin_room.tmx",
+    "activeFile": "ready_map/end_room.tmx",
     "expandedProjectPaths": [
         "ready_map",
         "."
@@ -59,8 +59,8 @@
             "scale": 0.75,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 435.99999999999994,
-                "y": 235.33333333333331
+                "x": 352,
+                "y": 352.6666666666667
             }
         },
         "ready_map/begin_room.tmx#mainlevbuild": {
@@ -82,7 +82,7 @@
             "scale": 0.75,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 806,
+                "x": 538,
                 "y": 384.66666666666663
             }
         },
@@ -258,7 +258,7 @@
             "scale": 0.7570312499999999,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 336.8421052631579,
+                "x": 359.2982456140352,
                 "y": 352.03302373581016
             }
         },
@@ -298,27 +298,23 @@
     "mapScene.enableWorlds": true,
     "openFiles": [
         "ready_map/mainlevbuild.tsx",
-        "ready_map/map1.tmx",
-        "ready_map/map2.tmx",
-        "ready_map/map3.tmx",
         "ready_map/room_with_chest.tmx",
-        "ready_map/top_wall.tmx",
-        "ready_map/vertical_corridor.tmx",
-        "ready_map/begin_room.tmx"
+        "ready_map/begin_room.tmx",
+        "ready_map/end_room.tmx"
     ],
     "project": "map.tiled-project",
     "recentFiles": [
+        "ready_map/mainlevbuild.tsx",
+        "ready_map/room_with_chest.tmx",
+        "ready_map/begin_room.tmx",
+        "ready_map/end_room.tmx",
         "ready_map/map3.tmx",
         "ready_map/map2.tmx",
         "ready_map/map1.tmx",
         "ready_map/horizontal_gate.tmx",
         "ready_map/horizontal_corridor.tmx",
-        "ready_map/begin_room.tmx",
-        "ready_map/end_room.tmx",
         "ready_map/vertical_corridor.tmx",
         "ready_map/top_wall.tmx",
-        "ready_map/room_with_chest.tmx",
-        "ready_map/mainlevbuild.tsx",
         "ready_map/right_wall.tmx"
     ],
     "tileset.lastUsedFormat": "tsx",
