@@ -11,6 +11,7 @@ FPS = 60
 PICTURE_WAllS = [
     TILED_MAP_DIR + f'\\picture_wall{i}.tmx' for i in range(1, 9)
 ]
+# Переделать(скорее всего)
 barrels_coords = {'map1': [[]], 'map2': [[]], 'map3': [[]]}
 # Пока только один вариант на каждую карту. Будет время добавлю другие
 barrels_coords['map1'] += [[*((i, 13 - 1) for i in range(2, 42, 2)),

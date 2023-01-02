@@ -3,7 +3,18 @@ import random
 import others
 from others import collide_rect, FPS, barrels_coords
 from room import Room, Corridor
-from sprites import Player, Barrel
+from sprites import Player, Barrel, barrel_group
+import time
+import sprites
+
+
+# Главные цели:
+# Добавить шипы
+# Добавить коллизию ворот с персонажами
+# Второстепенные цели:
+# Добавить еще карты
+# Добавить еще вариации расстановок бочек, а вместе с ними и шипы
+# Сделать еще оптимизации (на всякий случай)
 
 
 class Labyrinth:
@@ -50,13 +61,7 @@ class Labyrinth:
                         if i < 2 else Room(x, y, f'end_room')
                     if barrels_coords.get(room.filename_room):
                         random_coords = random.choice(barrels_coords[room.filename_room])
-                        for i in random_coords:
-                            if i[0] == 4 and i[1] == 12:
-                                # простая лазейка для того, чтобы мы посмотрели, как происходит коллизия
-                                # Его не будет в конечном итоге
-                                continue
-                            barrel_group.add(Barrel(room.x + room.tile_size * i[0],
-                                                    room.y + room.tile_size * i[1]))
+                        [Barrel(room.x + room.tile_size * i[0], room.y + room.tile_size * i[1]) for i in random_coords]
                     self.map_list[y][x] = room
                     self.rooms.append(room)
                     coords_all_room.append((x, y))
@@ -74,13 +79,8 @@ class Labyrinth:
                                     f'map{random.randrange(1, 4)}' if chest_room != count_room else 'room_with_chest')
                         if barrels_coords.get(room.filename_room):
                             random_coords = random.choice(barrels_coords[room.filename_room])
-                            for i in random_coords:
-                                if i[0] == 4 and i[1] == 12:
-                                    # простая лазейка для того, чтобы мы посмотрели, как происходит коллизия
-                                    # Его не будет в конечном итоге
-                                    continue
-                                barrel_group.add(Barrel(room.x + room.tile_size * i[0],
-                                                        room.y + room.tile_size * i[1]))
+                            [Barrel(room.x + room.tile_size * i[0], room.y + room.tile_size * i[1])
+                             for i in random_coords]
                         self.map_list[y][x] = room
                         self.rooms.append(room)
                         coords_all_room.append((x, y))
@@ -107,8 +107,10 @@ class Labyrinth:
         [i.move(x_move, y_move) for i in self.rooms]
         [i.move(x_move, y_move) for i in self.corridors]
         [i.move(x_move, y_move) for i in barrel_group]
+        [i.move(x_move, y_move) for i in sprites.torch_group]
 
     def update(self, screen):
+        start_time = time.time()
         x, y = move()
         for room in self.rooms:
             if collide_rect(0, 0, others.WIDTH, others.HEIGHT,
@@ -122,6 +124,7 @@ class Labyrinth:
                 x, y = corridor.render(screen, x, y, player)
         barrel_group.draw(screen)
         player.draw(screen)
+        sprites.torch_group.draw(screen)
         for room in self.rooms:
             if collide_rect(0, 0, others.WIDTH, others.HEIGHT,
                             room.x, room.y, room.x + room.width * room.tile_size,
@@ -133,16 +136,22 @@ class Labyrinth:
                             corridor.y + corridor.height * corridor.tile_size):
                 corridor.render_passing_walls(screen, player)
         player.move()
-        print(x, y, end=' ')
-        for i in barrel_group:
+        [i.increment_cnt() for i in sprites.torch_group]
+
+        # for i in barrel_group:
+        #     if not any([x, y]):
+        #         break
+        #     x, y = i.is_collide(player, x, y)
+        for i in sprites.torch_group:
             if not any([x, y]):
                 break
             x, y = i.is_collide(player, x, y)
-        print(x, y)
         if x or y:
             [i.move(x, y) for i in self.rooms]
             [i.move(x, y) for i in self.corridors]
             [i.move(x, y) for i in barrel_group]
+            [i.move(x, y) for i in sprites.torch_group]
+        print("--- %s seconds ---" % (time.time() - start_time))
 
 
 def move():
@@ -170,7 +179,6 @@ if __name__ == '__main__':
     running = 1
 
     player = Player()
-    barrel_group = pygame.sprite.Group()
 
     lab = Labyrinth()
     while running:

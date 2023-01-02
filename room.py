@@ -3,6 +3,7 @@ import pygame
 import pytmx
 from others import TILED_MAP_DIR, PICTURE_WAllS
 import others
+import sprites
 
 # комната 704*704
 # протяженность коридора 512 - 32
@@ -10,7 +11,6 @@ is_stay_gates = False  # Стоят ли ворота. Она понадобил
 
 
 class RoomCorridor:
-
     def __init__(self, x, y, filename):
         self.map = pytmx.load_pygame(f'{TILED_MAP_DIR}\\{filename}.tmx')
         self.x = x * (704 + 512)
@@ -23,9 +23,37 @@ class RoomCorridor:
         self.top_wall = False  # есть наверху полная стена или там коридор
         self.redrawing = True
         self.walls_gates = dict()
+        self.torch_group = pygame.sprite.Group()
+
+        self.add_flags()
+
+    def add_flags(self):
+        for y in range(self.height):
+            for x in range(self.width):
+                if self.map.get_tile_image(x, y, 0):
+                    if self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 1376:
+                        sprites.Torch('torch_', self.x + self.tile_size * (x - 1),
+                                      self.y + self.tile_size * (y - 1) - self.tile_size // 2, True)
+                    elif self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 1441:
+                        self.torch_group.add(sprites.Torch('torch_', self.x + self.tile_size * (x - 1),
+                                                           self.y + self.tile_size * (y - 1) - self.tile_size // 2,
+                                                           False))
+                    elif self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 489:
+                        sprites.Torch('candleA_0', self.x + self.tile_size * (x - 1),
+                                      self.y + self.tile_size * (y - 1) - self.tile_size // 2, True)
+                    elif self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 553:
+                        self.torch_group.add(sprites.Torch('candleA_0', self.x + self.tile_size * (x - 1),
+                                                           self.y + self.tile_size * (y - 1) - self.tile_size // 2,
+                                                           False))
+                    elif self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 615:
+                        sprites.Torch('candleB_0', self.x + self.tile_size * (x - 1),
+                                      self.y + self.tile_size * (y - 1), True)
+                    elif self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 550:
+                        self.torch_group.add(sprites.Torch('candleB_0', self.x + self.tile_size * (x - 1),
+                                                           self.y + self.tile_size * (y - 1), False))
 
     def render(self, screen, x_speed, y_speed, player):
-        x_speed, y_speed = self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(2),
+        x_speed, y_speed = self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(1, 3),
                                            functions=[self.is_render_picture_walls, self.is_collide],
                                            player=player, x_speed=x_speed,
                                            y_speed=y_speed)
@@ -33,9 +61,10 @@ class RoomCorridor:
 
     def render_passing_walls(self, screen, player):
         self.redrawing = True
-        self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, [2],
+        self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, [3],
                         functions=[self.redrawing_player],
                         player=player)
+
         if self.redrawing:
             player.draw(screen)
 
@@ -57,6 +86,7 @@ class RoomCorridor:
     def move(self, x, y):
         self.x -= x
         self.y -= y
+        [i.move(x, y) for i in self.torch_group]
 
     def is_collide(self, player, image, x, y, x_speed, y_speed):
         # Можно сказать, создаем спрайт ячейки для проверки коллизии
@@ -84,18 +114,18 @@ class RoomCorridor:
         return x_speed, y_speed
 
     def blit_tiles(self, screen, room, x_pos, y_pos, w, h, layers, functions=[], is_top_wall=False,
-                   x_speed=None, y_speed=None, player=None, layers_collide=1):
+                   x_speed=None, y_speed=None, player=None, layers_collide=2):
         x1, y1, x2, y2 = self.rect_in_screen(x_pos, y_pos, w, h)
         for y in range(y1, y2):
             for x in range(x1, x2):
                 for layer in layers:
                     if self.is_render_picture_walls in functions:
-                        if (is_top_wall or layer == 1) and self.is_render_picture_walls(x, y):
+                        if (is_top_wall or layer == 2) and self.is_render_picture_walls(x, y):
                             image = self.picture_walls[f'{x} {y}'][0].get_tile_image(
                                 *self.picture_walls[f'{x} {y}'][-1], 0)
                             screen.blit(image, (x_pos + x * self.tile_size, y_pos + y * self.tile_size))
                             continue
-                    if type(self) == Room and layer == 0 and y == 43 and type(self.walls_gates['bottom']) != Gate:
+                    if type(self) == Room and layer == 1 and y == 43 and type(self.walls_gates['bottom']) != Gate:
                         continue
                     image = room.get_tile_image(x, y, layer)
                     if image:
@@ -103,7 +133,7 @@ class RoomCorridor:
                         if self.is_collide in functions and layer == layers_collide:
                             x_speed, y_speed = self.is_collide(player, image, x_pos + x * self.tile_size,
                                                                y_pos + y * self.tile_size, x_speed, y_speed)
-                        if self.redrawing_player in functions:
+                        if self.redrawing and self.redrawing_player in functions:
                             self.redrawing_player(player, x, y)
         if x_speed is not None:
             return x_speed, y_speed
@@ -114,7 +144,7 @@ class RoomCorridor:
     def redrawing_player(self, player, x, y):
         image_y = self.y + y * self.tile_size
         image_x = self.x + x * self.tile_size
-        if 406 >= self.map.tiledgidmap[self.map.get_tile_gid(x, y, 2)] >= 404 or \
+        if 406 >= self.map.tiledgidmap[self.map.get_tile_gid(x, y, 3)] >= 404 or \
                 (image_y + self.tile_size >= player.rect.y + player.rect.height >= image_y and (
                         player.rect.x + player.rect.width >= image_x >= player.rect.x or
                         player.rect.x + player.rect.width >= image_x >= player.rect.x)):
@@ -143,7 +173,7 @@ class Room(RoomCorridor):
                                                        functions=[self.is_collide, self.is_render_picture_walls],
                                                        layers_collide=0, is_top_wall=True)
                 continue
-        self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(3, len(self.map.layers)))
+        self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(4, len(self.map.layers)))
         return x_speed, y_speed
 
     def render_passing_walls(self, screen, x_speed, y_speed, player):
@@ -164,6 +194,8 @@ class Room(RoomCorridor):
             x_speed, y_speed = self.blit_tiles(screen, wall, is_right + self.x, is_bottom + self.y, wall.width,
                                                wall.height, range(len(wall.layers)), functions=[self.is_collide],
                                                x_speed=x_speed, y_speed=y_speed, player=player, layers_collide=0)
+        self.torch_group.draw(screen)
+        [i.increment_cnt() for i in self.torch_group]
         return x_speed, y_speed
 
     def set_walls(self, left, right, top, bottom):
@@ -225,11 +257,11 @@ class Corridor(RoomCorridor):
             self.y <= others.HEIGHT // 2 <= self.y + self.height * self.tile_size else True
         x_speed, y_speed = super(Corridor, self).render(screen, x_speed, y_speed, player)
         if not is_stay_gates:
-            self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(3, len(self.map.layers)))
+            self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(4, len(self.map.layers)))
         return x_speed, y_speed
 
     def render_passing_walls(self, screen, player):
-        self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, [2])
+        self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, [3])
 
 
 class Gate:
