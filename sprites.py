@@ -11,9 +11,12 @@ class Player(pygame.sprite.Sprite):
     # Временно
     def __init__(self, ):
         super(Player, self).__init__()
-        self.image = load_image('Adventurer\\adventurer_stand.png', -1)
+        self.image = load_image('Adventurer\\adventurer_stand_prob_0.png', -1)
         self.image = pygame.transform.scale(self.image,
-                                            (30, self.image.get_rect().height * 2))
+                                            (30, self.image.get_rect().height * 2.3))
+        self.images = [pygame.transform.scale(load_image(f'Adventurer\\adventurer_stand_prob_{i}.png', -1),
+                                              (30, self.image.get_rect().height))
+                       for i in range(13)]
         self.rect = self.image.get_rect()
         self.rect.x = self.x = others.WIDTH // 2
         self.rect.y = self.y = others.HEIGHT // 2
@@ -22,13 +25,17 @@ class Player(pygame.sprite.Sprite):
         self.mask = pygame.mask.from_surface(image)  # маска нужна для коллизии с бочками
         # Зачем создавать новый image: если заметить, то оставлена только та часть, где должны быть ноги.
         # И для того, чтобы точно это были ноги, а не прическа, в другой функции меняется координату у
+        self.cnt = 0
+        self.step = 10
 
     def draw(self, screen):
-        screen.blit(self.image, self.rect)
+        # screen.blit(self.image, self.rect)
+        screen.blit(self.images[self.cnt // self.step], self.rect)
 
     def move(self):
         self.rect.x = self.x = others.WIDTH // 2 - self.rect.width // 2
         self.rect.y = self.y = others.HEIGHT // 2 - self.rect.height // 2
+        self.cnt += -self.cnt if self.cnt >= 120 else 1
 
 
 class Barrel(pygame.sprite.Sprite):

@@ -127,6 +127,7 @@ class Labyrinth:
         barrel_group.draw(screen)
         player.draw(screen)
         torch_group.draw(screen)
+
         for room in self.rooms:
             if collide_rect(0, 0, others.WIDTH, others.HEIGHT,
                             room.x, room.y, room.x + room.width * room.tile_size,

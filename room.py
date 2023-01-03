@@ -64,7 +64,8 @@ class RoomCorridor:
         self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, [3],
                         functions=[self.redrawing_player],
                         player=player)
-
+        self.torch_group.draw(screen)
+        [i.increment_cnt() for i in self.torch_group]
         if self.redrawing:
             player.draw(screen)
 
@@ -194,8 +195,7 @@ class Room(RoomCorridor):
             x_speed, y_speed = self.blit_tiles(screen, wall, is_right + self.x, is_bottom + self.y, wall.width,
                                                wall.height, range(len(wall.layers)), functions=[self.is_collide],
                                                x_speed=x_speed, y_speed=y_speed, player=player, layers_collide=0)
-        self.torch_group.draw(screen)
-        [i.increment_cnt() for i in self.torch_group]
+
         return x_speed, y_speed
 
     def set_walls(self, left, right, top, bottom):
