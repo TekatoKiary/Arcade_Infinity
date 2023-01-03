@@ -1,6 +1,7 @@
 import pygame
 import math
 import random
+import ui
 
 all_sprites = pygame.sprite.Group()
 player_sprite = pygame.sprite.Group()
@@ -21,8 +22,13 @@ class Player(pygame.sprite.Sprite):
         self.max_hp = max_hp
         self.hp_left = self.max_hp
 
-        self.active_gun = Gun(player=self, center_pos=(300, 200), damage=20, image='[image_name]', ammo=-1, reload_time=1000)
+        self.inventory_size = 3
+        self.inventory = [Gun(player=self, name='first_gun', center_pos=(300, 200), damage=20, image='[image_name]', ammo=-1, reload_time=1000), \
+            *[None for i in range(self.inventory_size - 1)]]
+    
+        self.active_gun = self.inventory[0]
         self.active_gun.is_raised = True
+        self.cells = ui.Inventory(sprite_group=(all_sprites, ui_sprites), player=self)
 
         self.image = pygame.Surface((50, 50), pygame.SRCALPHA, 32)
         self.rect = self.image.get_rect()
@@ -35,8 +41,6 @@ class Player(pygame.sprite.Sprite):
         self.cord_y = self.rect.y
 
         self.balance = 10
-
-        self.inventary = []
     
     def take_damage(self, damage):
         self.hp_left -= damage
@@ -52,23 +56,41 @@ class Player(pygame.sprite.Sprite):
         if event.key == pygame.K_f:
             self.take_gun()
 
-
     def take_gun(self):
-        for gun in gun_sprites:
-            if self.active_gun == 'Hands':
+        if self.inventory.count(None) > 0:
+            for gun in gun_sprites:
                 if pygame.sprite.spritecollide(gun, player_sprite, False):
-                    if gun.can_be_raised:
+                    if gun.can_be_raised and gun not in self.inventory:
                         gun.is_raised = True
-                        self.active_gun = gun
+                        gun.set_display(False)
+                        print(self.inventory)
+                        for i, item in enumerate(self.inventory):
+                            if item == None:
+                                self.inventory[i] = gun
+                                break
+                        break
+            self.cells.update()
+            print(self.inventory)
             
     def drop_gun(self):
-        if self.active_gun != 'Hands':
+        if self.inventory.count(None) < 2:
             self.active_gun.is_raised = False
             self.active_gun.is_reloading_now = False
             pygame.time.set_timer(self.active_gun.reload_event, 0)
             self.active_gun.can_shoot = True
             pygame.time.set_timer(self.active_gun.shoot_event, 0)
-            self.active_gun = 'Hands'
+            
+            self.inventory.remove(self.active_gun)
+            self.inventory.append(None)
+            for item in self.inventory[::-1]:
+                if item != None:
+                    self.active_gun = item
+            self.active_gun.set_display(True)
+            self.cells.update()
+            print(self.inventory)
+    
+    def change_gun(self, n):
+        pass
 
     def move(self):
         keys = pygame.key.get_pressed()
@@ -93,9 +115,9 @@ class Player(pygame.sprite.Sprite):
 
 class Gun(pygame.sprite.Sprite):
     # damage_type: point, splash
-    def __init__(self, player, name='gun', can_be_raised=True, center_pos=(0, 0), image='', destroy_bullets=True, damage_type='point', bullet_color=(128, 128, 128), \
+    def __init__(self, player, name='gun', can_be_raised=True, center_pos=(0, 0), image='', destroy_bullets=True, destroy_bullets_in_time=0, damage_type='point', bullet_color=(128, 128, 128), \
         bullet_size=(10, 10), bullet_speed=300, fire_rate=300, shooting_accuracy=1, damage=0, splash_damage=10, splash_radius=150, ammo=10, \
-            reload_time=3000, reload_event=1, shoot_event=2):
+            reload_time=3000):
 
         self.player = player
         super().__init__()
@@ -106,6 +128,7 @@ class Gun(pygame.sprite.Sprite):
         # Их не изменять
         self.center_pos = center_pos
         self.destroy_bullets = destroy_bullets
+        self.destroy_bullets_in_time = destroy_bullets_in_time
         self.bullet_color = bullet_color
         self.bullet_size = bullet_size
         self.bullet_speed = bullet_speed
@@ -120,10 +143,8 @@ class Gun(pygame.sprite.Sprite):
         self.ammo_amount = self.ammo
         self.reload_time = reload_time
 
-        self.reload_event_num = reload_event
-        self.reload_event = pygame.USEREVENT + reload_event
-        self.shoot_event_num = shoot_event
-        self.shoot_event = pygame.USEREVENT + shoot_event
+        self.reload_event = pygame.USEREVENT + 1
+        self.shoot_event = pygame.USEREVENT + 2
 
         self.image = pygame.Surface((25, 25), pygame.SRCALPHA, 32)
         self.rotate_image = self.image
@@ -134,9 +155,18 @@ class Gun(pygame.sprite.Sprite):
         self.cord_y = self.rect.y
 
         self.can_be_raised = can_be_raised
+        self.is_displayed = True
         self.is_raised = False
         self.is_reloading_now = False
         self.can_shoot = True
+    
+    def set_display(self, bool):
+        if bool:
+            self.is_displayed = True
+            self.add(gun_sprites, all_sprites)
+        else:
+            self.is_displayed = False
+            all_sprites.remove(self)
         
 
     def try_shoot(self):
@@ -169,24 +199,22 @@ class Gun(pygame.sprite.Sprite):
             self.cord_y - self.rotate_image.get_height() / 2
         angle = (180 / math.pi) * math.atan2(rel_x, rel_y)
         return angle
+    
+    def copy(self):
+        return Gun(player=self.player, can_be_raised=self.can_be_raised, name=self.name, center_pos=self.center_pos, image=self.image, destroy_bullets=self.destroy_bullets, \
+            damage_type=self.damage_type, bullet_color=self.bullet_color, bullet_size=self.bullet_size, bullet_speed=self.bullet_speed, \
+                fire_rate=self.fire_rate, shooting_accuracy=self.shooting_accuracy, damage=self.damage, splash_damage=self.splash_damage, \
+                    splash_radius=self.splash_radius, ammo=self.ammo, reload_time=self.reload_time)
 
     def update(self):
         self.rect.x = self.cord_x
         self.rect.y = self.cord_y
 
         if self.is_raised:
-            self.player.active_gun = self
             self.cord_x = self.player.cord_x + 30
             self.cord_y = self.player.cord_y + 20
 
             self.rotate()
-    
-    def copy(self):
-        return Gun(player=self.player, can_be_raised=self.can_be_raised, name=self.name, center_pos=self.center_pos, image=self.image, destroy_bullets=self.destroy_bullets, \
-            damage_type=self.damage_type, bullet_color=self.bullet_color, bullet_size=self.bullet_size, bullet_speed=self.bullet_speed, \
-                fire_rate=self.fire_rate, shooting_accuracy=self.shooting_accuracy, damage=self.damage, splash_damage=self.splash_damage, \
-                    splash_radius=self.splash_radius, ammo=self.ammo, reload_time=self.reload_time, reload_event=self.reload_event_num, \
-                        shoot_event=self.shoot_event_num)
 
 
 class Bullet(pygame.sprite.Sprite):

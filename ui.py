@@ -229,3 +229,23 @@ class ShopItems():
 
     def set_cost(self, cost):
         self.cost = cost
+
+
+class Inventory():
+    def __init__(self, player, sprite_group):
+        self.player = player
+        self.inventory = self.player.inventory
+        self.buttons = [Buttons(pos=(i * 65 + 300, 430), image_pos=(214, 156), image_size=(56, 56), sprite_group=sprite_group) for i in range(player.inventory_size)]
+        self.update()
+    
+    def update(self):
+        self.inventory = self.player.inventory
+        self.update_cells()
+    
+    def update_cells(self):
+        for i, cell in enumerate(self.inventory):
+            self.buttons[i].update_image(image='main_ui.png', image_pos=(214, 156), image_size=(56, 56))
+            if cell != None:
+                if cell == self.player.active_gun:
+                    self.buttons[i].update_image(image='main_ui.png', image_pos=(274, 156), image_size=(56, 56))
+                self.buttons[i].image.blit(cell.rotate_image, cell.rotate_image.get_rect())
