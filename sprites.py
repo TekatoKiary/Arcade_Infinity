@@ -14,9 +14,12 @@ class Player(pygame.sprite.Sprite):
         self.image = load_image('Adventurer\\adventurer_stand_prob_0.png', -1)
         self.image = pygame.transform.scale(self.image,
                                             (30, self.image.get_rect().height * 2.3))
-        self.images = [pygame.transform.scale(load_image(f'Adventurer\\adventurer_stand_prob_{i}.png', -1),
-                                              (30, self.image.get_rect().height))
-                       for i in range(13)]
+        self.images_stand = [pygame.transform.scale(load_image(f'Adventurer\\adventurer_stand_prob_{i}.png', -1),
+                                                    (30, self.image.get_rect().height))
+                             for i in range(13)]
+        self.images_move = [pygame.transform.scale(load_image(f'Adventurer\\adventurer_move_prob_{i}.png', -1),
+                                                   (30, self.image.get_rect().height))
+                            for i in range(8)]
         self.rect = self.image.get_rect()
         self.rect.x = self.x = others.WIDTH // 2
         self.rect.y = self.y = others.HEIGHT // 2
@@ -27,15 +30,44 @@ class Player(pygame.sprite.Sprite):
         # И для того, чтобы точно это были ноги, а не прическа, в другой функции меняется координату у
         self.cnt = 0
         self.step = 10
+        self.is_moving = False
+        self.left_right = 1  # взгляд направо - 1, взгляд налево - 0
 
     def draw(self, screen):
         # screen.blit(self.image, self.rect)
-        screen.blit(self.images[self.cnt // self.step], self.rect)
+        if self.is_moving:
+            screen.blit(self.images_move[self.cnt // self.step], self.rect)
+        else:
+            screen.blit(self.images_stand[self.cnt // self.step], self.rect)
 
-    def move(self):
+    def move(self, x, y):
         self.rect.x = self.x = others.WIDTH // 2 - self.rect.width // 2
         self.rect.y = self.y = others.HEIGHT // 2 - self.rect.height // 2
-        self.cnt += -self.cnt if self.cnt >= 120 else 1
+        if (x or y) and not self.is_moving:
+            self.cnt = 0
+            self.is_moving = True
+        elif (x or y) and self.is_moving:
+            self.cnt += -self.cnt if self.cnt >= self.step * (len(self.images_move) - 1) else 1
+        elif not (x or y) and self.is_moving:
+            self.is_moving = False
+            self.cnt = 0
+        elif not (x or y) and not self.is_moving:
+            self.cnt += -self.cnt if self.cnt >= self.step * (len(self.images_stand) - 1) else 1
+        self.set_left_right()
+
+    def set_left_right(self):
+        # решил сделать так: мышка на левой стороне экрана игры - персонаж смотрит налево и даже когда идет направо;
+        # мышка на правой стороне экрана игры - персонаж смотрит направо и даже когда идет налево
+        # Лучше будет, если персонаж идет назад и стреляет впереди себя, а не идет прямо и стреляет куда-то позади себя
+        x, y = pygame.mouse.get_pos()
+        if x >= others.WIDTH // 2 and not self.left_right:
+            self.left_right = 1
+            self.images_move = [pygame.transform.flip(i, True, False) for i in self.images_move]
+            self.images_stand = [pygame.transform.flip(i, True, False) for i in self.images_stand]
+        elif x < others.WIDTH // 2 and self.left_right:
+            self.left_right = 0
+            self.images_move = [pygame.transform.flip(i, True, False) for i in self.images_move]
+            self.images_stand = [pygame.transform.flip(i, True, False) for i in self.images_stand]
 
 
 class Barrel(pygame.sprite.Sprite):
@@ -161,7 +193,7 @@ class Spike(pygame.sprite.Sprite):
         except IndexError:
             self.image = self.images[0]
         self.cnt += 1
-        if self.cnt >= 180:
+        if self.cnt >= self.step * (len(self.images) - 1):
             self.cnt = 0
 
     def is_collide(self, player, x_speed, y_speed):

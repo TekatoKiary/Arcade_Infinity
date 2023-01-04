@@ -113,6 +113,7 @@ class Labyrinth:
     def update(self, screen):
         start_time = time.time()
         x, y = move()
+        player.move(x, y)
         for room in self.rooms:
             if collide_rect(0, 0, others.WIDTH, others.HEIGHT,
                             room.x, room.y, room.x + room.width * room.tile_size,
@@ -138,7 +139,7 @@ class Labyrinth:
                             corridor.x, corridor.y, corridor.x + corridor.width * corridor.tile_size,
                             corridor.y + corridor.height * corridor.tile_size):
                 corridor.render_passing_walls(screen, player)
-        player.move()
+
         [i.increment_cnt() for i in torch_group]
         [i.increment_cnt() for i in spike_group]
         # for i in barrel_group:
