@@ -4,8 +4,8 @@ import os
 pygame.init()
 shop_items_group = pygame.sprite.Group()
 
-def load_image(name):
-    fullname = os.path.join('ui', name)
+def load_image(name, path='ui'):
+    fullname = os.path.join(path, name)
     try:
         image = pygame.image.load(fullname).convert_alpha()
     except pygame.error as message:

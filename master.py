@@ -39,14 +39,16 @@ if __name__ == '__main__':
         # Автомат с рикошет-пулями, Гранатомет, Автомат с проходящими сквозь мобов пулями, 
         # Пушка, стреляющая шаровыми молниями, Пушка с маленьким уроном, но который наносится всех мобам
         # Расстановщик мин, Пушка с бесконечными патронами
+    transperent_image = pygame.Surface((5, 5), pygame.SRCALPHA, 32)
     pl = sprites.Player((100, 100), '[image_name]')
-    ak47 = sprites.Gun(player=pl, name='ak47', center_pos=(200, 200), image='[image_name]', ammo=999, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150, shooting_accuracy=0.95)
-    pistol = sprites.Gun(player=pl, name='pistol', center_pos=(300, 200), image='[image_name]', ammo=-1, reload_time=1000)
-    m1 = sprites.Monster(player=pl, center_pos=(300, 100), image='[image_name]')
-    m2 = sprites.Monster(player=pl, center_pos=(400, 100), image='[image_name]', hp=1)
-    m3 = sprites.Monster(player=pl, center_pos=(450, 130), image='[image_name]', hp=1)
-    m4 = sprites.Monster(player=pl, center_pos=(470, 170), image='[image_name]', hp=1)
-    m5 = sprites.Monster(player=pl, center_pos=(450, 210), image='[image_name]', hp=1)
+    ak47 = sprites.Gun(player=pl, name='ak47', center_pos=(200, 200), ammo=999, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150, shooting_accuracy=0.95)
+    pistol = sprites.Gun(player=pl, name='pistol', center_pos=(300, 200), ammo=-1)
+
+    fists = sprites.Gun(player=pl, name='fists', ammo=-1, target_group=sprites.player_sprite, damage=15, image=transperent_image, bullet_image=transperent_image)
+    m1 = sprites.Monster(player=pl, center_pos=(300, 100), attack_range=100, image=ui.cut_image(ui.load_image(name='Ghoul Sprite Sheet.png', path='textures'), (3, 9), (27, 23)), gun=fists)
+    m2 = sprites.Monster(player=pl, center_pos=(600, 100), image=ui.cut_image(ui.load_image(name='zombie old lady.png', path='textures'), (11, 1), (10, 15)))
+    m3 = sprites.Monster(player=pl, center_pos=(650, 130), image=ui.cut_image(ui.load_image(name='zombie old lady.png', path='textures'), (11, 1), (10, 15)))
+
     # Ui
     fps = ui.Text(pos=(5, 5), sprite_group=sprites.all_sprites)
     player_info = ui.Img(pos=(20, 20), sprite_group=(sprites.all_sprites, sprites.ui_sprites), image_pos=(56, 0), image_size=(154, 48))
