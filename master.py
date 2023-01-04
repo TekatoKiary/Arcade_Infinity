@@ -96,25 +96,30 @@ if __name__ == '__main__':
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 can_shoot = True
+                # ===============================================================================
                 for sprite in sprites.ui_sprites:
                     # Если навелся на UI, то стрелять нельзя
                     if sprite.mouse_hovered():
                         can_shoot = False
-
+                        # Открыть магазин
                         if shop_button.mouse_clicked():
                             open_shop()
-                        
                         # Листать страницы магазина
                         if shop.button_back.mouse_clicked() or shop.button_next.mouse_clicked():
                             shop.flip_shop_page()
-
+                # ===============================================================================
                 # Проверка нажатия на кнопку покупки
                 for bg in shop.backgrounds:
                     if bg.mouse_clicked() and shop.is_visible and bg in sprites.all_sprites:
                         shop.buy_item(bg.item)
-                        
                 if can_shoot:
                     pl.on_clicked(event)
+
+                # Проверка нажатия на ячейки инвентаря
+                for i, button in enumerate(pl.cells.buttons):
+                    if button.mouse_clicked():
+                        pl.switch_gun(i)
+                # ===============================================================================
             
             if event.type == pygame.KEYDOWN:
                 pl.on_k_pressed(event)

@@ -55,6 +55,13 @@ class Player(pygame.sprite.Sprite):
             self.drop_gun()
         if event.key == pygame.K_f:
             self.take_gun()
+        if event.key == pygame.K_1:
+            self.switch_gun(0)
+        if event.key == pygame.K_2:
+            self.switch_gun(1)
+        if event.key == pygame.K_3:
+            self.switch_gun(2)
+
 
     def take_gun(self):
         if self.inventory.count(None) > 0:
@@ -63,14 +70,12 @@ class Player(pygame.sprite.Sprite):
                     if gun.can_be_raised and gun not in self.inventory:
                         gun.is_raised = True
                         gun.set_display(False)
-                        print(self.inventory)
                         for i, item in enumerate(self.inventory):
                             if item == None:
                                 self.inventory[i] = gun
                                 break
                         break
             self.cells.update()
-            print(self.inventory)
             
     def drop_gun(self):
         if self.inventory.count(None) < 2:
@@ -87,10 +92,17 @@ class Player(pygame.sprite.Sprite):
                     self.active_gun = item
             self.active_gun.set_display(True)
             self.cells.update()
-            print(self.inventory)
     
-    def change_gun(self, n):
-        pass
+    def switch_gun(self, n):
+        if self.inventory[n] != None:
+            self.active_gun.is_reloading_now = False
+            pygame.time.set_timer(self.active_gun.reload_event, 0)
+            self.active_gun.can_shoot = True
+            pygame.time.set_timer(self.active_gun.shoot_event, 0)
+            self.active_gun.set_display(False)
+            self.active_gun = self.inventory[n]
+            self.active_gun.set_display(True)
+            self.cells.update()
 
     def move(self):
         keys = pygame.key.get_pressed()
