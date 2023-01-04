@@ -1,11 +1,4 @@
-# Довавить инвентарь 
-# Добавить destroy_self_in_time= в Bullets()
-
-
-
-
 import pygame
-import random
 import ui
 import sprites
 
@@ -86,13 +79,9 @@ if __name__ == '__main__':
     pygame.time.set_timer(respawn_monsters, 30)
 
     while running:
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-
-            if event.type == pygame.MOUSEMOTION:
-                pass
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 can_shoot = True
@@ -124,19 +113,18 @@ if __name__ == '__main__':
             if event.type == pygame.KEYDOWN:
                 pl.on_k_pressed(event)
             
-            if pl.active_gun != 'Hands':
-                # Перезарядка текущего оружия
-                if event.type == pl.active_gun.reload_event:
-                    pl.active_gun.reload_ammo()
-                    pygame.time.set_timer(pl.active_gun.reload_event, 0)
+            # Перезарядка текущего оружия
+            if event.type == pl.active_gun.reload_event:
+                pl.active_gun.reload_ammo()
+                pygame.time.set_timer(pl.active_gun.reload_event, 0)
                 
-                # Стрельба
-                if event.type == pl.active_gun.shoot_event:
-                    if pygame.mouse.get_pressed()[0]:
-                        pl.active_gun.shoot()
-                    else:
-                        pygame.time.set_timer(pl.active_gun.shoot_event, 0)
-                        pl.active_gun.can_shoot = True
+            # Стрельба
+            if event.type == pl.active_gun.shoot_event:
+                if pygame.mouse.get_pressed()[0]:
+                    pl.active_gun.shoot(target_pos=pygame.mouse.get_pos())
+                else:
+                    pygame.time.set_timer(pl.active_gun.shoot_event, 0)
+                    pl.active_gun.can_shoot = True
             
             # Респавн мобов 
             if event.type == respawn_monsters:
