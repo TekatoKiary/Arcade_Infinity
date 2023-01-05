@@ -325,7 +325,7 @@ class Bullet(pygame.sprite.Sprite):
 
 
 class Monster(pygame.sprite.Sprite):
-    def __init__(self, player, center_pos, image, hp=100, reward=1, attack_range=200, gun=None):
+    def __init__(self, player, center_pos, image, hp=100, reward=1, attack_range=200, gun=None, dead=False, running_speed=50, player_avoidance=True, move_randomly=True):
         super().__init__(all_sprites)
         self.player = player
         self.add(monster_sprites)
@@ -336,8 +336,9 @@ class Monster(pygame.sprite.Sprite):
         else:
             self.active_gun = gun
 
+        self.player_avoidance = player_avoidance
         self.attack_range = attack_range
-
+        self.running_speed = running_speed
         self.max_hp = hp
         self.reward = reward
         self.hp_left = self.max_hp
@@ -352,6 +353,13 @@ class Monster(pygame.sprite.Sprite):
         self.cord_y = self.rect.y
 
         self.shooting_timer = random.randint(0, 30)
+        self.movement_timer = 20
+        self.movement_direction = 1
+        self.move_randomly = move_randomly
+
+
+        if dead:
+            self.die()
     
     def respawn(self):
         self.hp_left = self.max_hp
@@ -361,6 +369,7 @@ class Monster(pygame.sprite.Sprite):
         self.active_gun.add(all_sprites, gun_sprites)
     
     def die(self):
+        self.hp_left = 0
         self.kill()
         self.add(dead_monsters)
     
@@ -375,24 +384,56 @@ class Monster(pygame.sprite.Sprite):
             self.active_gun.shoot((self.player.rect.centerx, self.player.rect.centery))
             self.shooting_timer = 10
     
+    def walk(self, movement_direction=1, random_direction=(1, 1)):
+        distance = max(math.sqrt((self.rect.centerx - self.player.rect.centerx) ** 2 + (self.rect.centery - self.player.rect.centery) ** 2), 1)
+        vx = (self.rect.centerx - self.player.rect.centerx) / distance / 60 * self.running_speed
+        vy = (self.rect.centery - self.player.rect.centery) / distance / 60 * self.running_speed
+
+        self.cord_x -= movement_direction * vx * random_direction[0]
+        self.cord_y -= movement_direction * vy * random_direction[1]
+        
+    def run_away(self):
+        if self.player_avoidance:
+            if self.current_distance_sqr < self.attack_range ** 2 / 3:
+                self.walk(movement_direction=-1)
+
+    
     def distance_check(self):
-        if (self.rect.centerx - self.player.rect.centerx) ** 2 + (self.rect.centery - self.player.rect.centery) ** 2 < self.attack_range ** 2:
+        self.current_distance_sqr = (self.rect.centerx - self.player.rect.centerx) ** 2 + (self.rect.centery - self.player.rect.centery) ** 2
+        if self.current_distance_sqr < (self.attack_range + 100) ** 2:
             self.shoot()
+
+        if self.current_distance_sqr < self.attack_range ** 2:
+            self.run_away()
+        else:
+            self.walk()
+            
+        self.random_movement()
+    
+    def random_movement(self):
+        if self.move_randomly:
+            if self.movement_timer > 0:
+                if random.randint(0, 15) == 0:
+                    self.movement_timer -= 1
+            else:
+                self.movement_direction = self.movement_direction * -1
+                self.movement_timer = 10
+            self.walk(random_direction=(self.movement_direction / 2, self.movement_direction / 2))
 
     def update(self):
         if self.hp_left <= 0:
             self.die()
             self.give_reward()
             self.active_gun.kill()
+        else:
+            self.rect.x = self.cord_x
+            self.rect.y = self.cord_y
 
-        self.rect.x = self.cord_x
-        self.rect.y = self.cord_y
+            self.active_gun.cord_x = self.rect.centerx
+            self.active_gun.cord_y = self.rect.centery
 
-        self.active_gun.cord_x = self.rect.centerx
-        self.active_gun.cord_y = self.rect.centery
-
-        self.distance_check()
-        self.active_gun.rotate(self.player.rect.center)
+            self.distance_check()
+            self.active_gun.rotate(self.player.rect.center)
 
 
 class Bars(pygame.sprite.Sprite):

@@ -1,6 +1,7 @@
 import pygame
 import ui
 import sprites
+import random
 
 
 def update_fps(sprite):
@@ -45,9 +46,11 @@ if __name__ == '__main__':
     pistol = sprites.Gun(player=pl, name='pistol', center_pos=(300, 200), ammo=-1)
 
     fists = sprites.Gun(player=pl, name='fists', ammo=-1, target_group=sprites.player_sprite, damage=15, image=transperent_image, bullet_image=transperent_image)
-    m1 = sprites.Monster(player=pl, center_pos=(300, 100), attack_range=100, image=ui.cut_image(ui.load_image(name='Ghoul Sprite Sheet.png', path='textures'), (3, 9), (27, 23)), gun=fists)
+    m1 = sprites.Monster(player=pl, center_pos=(300, 100), attack_range=50, image=ui.cut_image(ui.load_image(name='Ghoul Sprite Sheet.png', path='textures'), (3, 9), (27, 23)), gun=fists, player_avoidance=False, running_speed=70, move_randomly=False)
     m2 = sprites.Monster(player=pl, center_pos=(600, 100), image=ui.cut_image(ui.load_image(name='zombie old lady.png', path='textures'), (11, 1), (10, 15)))
     m3 = sprites.Monster(player=pl, center_pos=(650, 130), image=ui.cut_image(ui.load_image(name='zombie old lady.png', path='textures'), (11, 1), (10, 15)))
+    m3 = sprites.Monster(player=pl, center_pos=(700, 160), image=ui.cut_image(ui.load_image(name='zombie old lady.png', path='textures'), (11, 1), (10, 15)))
+    m3 = sprites.Monster(player=pl, center_pos=(650, 190), image=ui.cut_image(ui.load_image(name='zombie old lady.png', path='textures'), (11, 1), (10, 15)))
 
     # Ui
     fps = ui.Text(pos=(5, 5), sprite_group=sprites.all_sprites)
@@ -78,7 +81,7 @@ if __name__ == '__main__':
     shop.add_item(Uzi, Sniper, GrenadeLauncher, BallLightningLauncher, Infinity, MinePlacer)
     # Респавн мобов для тестов
     respawn_monsters = pygame.USEREVENT + 3
-    pygame.time.set_timer(respawn_monsters, 30)
+    pygame.time.set_timer(respawn_monsters, 10000)
 
     while running:
         for event in pygame.event.get():
