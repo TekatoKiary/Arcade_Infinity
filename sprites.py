@@ -1,3 +1,4 @@
+import random
 import pygame
 import others
 from others import load_image
@@ -8,7 +9,6 @@ spike_group = pygame.sprite.Group()
 
 
 class Player(pygame.sprite.Sprite):
-    # Временно
     def __init__(self, ):
         super(Player, self).__init__()
         self.image = load_image('Adventurer\\adventurer_stand_prob_0.png', -1)
@@ -68,6 +68,51 @@ class Player(pygame.sprite.Sprite):
             self.left_right = 0
             self.images_move = [pygame.transform.flip(i, True, False) for i in self.images_move]
             self.images_stand = [pygame.transform.flip(i, True, False) for i in self.images_stand]
+
+
+class Monster(pygame.sprite.Sprite):
+    def __init__(self, x, y):
+        super(Monster, self).__init__()
+        self.image = load_image('Monsters\\monster.png', -1)
+        self.image = pygame.transform.scale(self.image,
+                                            (self.image.get_rect().width * 2,
+                                             self.image.get_rect().height * 2.3))
+        self.rect = self.image.get_rect()
+        self.rect.x = self.x = x
+        self.rect.y = self.y = y
+        image = pygame.transform.scale(self.image,
+                                       (self.image.get_rect().width,
+                                        self.image.get_rect().height - self.rect.height // 1.01))
+        self.mask = pygame.mask.from_surface(image)
+        self.random_x = 0
+        self.random_y = 0
+        self.delay = random.randrange(1, 11) * 30
+        self.is_moving = 0
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+    def move(self, x, y):
+        self.rect.x -= x
+        self.rect.y -= y
+
+    def self_move(self):
+        if self.delay - 1 == 0 and self.is_moving == 0:
+            self.is_moving = random.randrange(1, 21)
+            self.delay = 0
+            self.random_x = random.randrange(-10, 11)
+            self.random_y = random.randrange(-10, 11)
+        elif self.delay == 0 and self.is_moving - 1 == 0:
+            self.is_moving = 0
+            self.delay = random.randrange(1, 11) * 30
+            self.random_x = 0
+            self.random_y = 0
+        elif self.delay != 0 and self.is_moving == 0:
+            self.delay -= 1
+        elif self.is_moving != 0 and self.delay == 0:
+            self.is_moving -= 1
+            self.rect.x += self.random_x
+            self.rect.y += self.random_y
 
 
 class Barrel(pygame.sprite.Sprite):

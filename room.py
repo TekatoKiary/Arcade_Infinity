@@ -1,13 +1,13 @@
 import random
 import pygame
 import pytmx
-from others import TILED_MAP_DIR, PICTURE_WAllS
+from others import TILED_MAP_DIR, PICTURE_WAllS, is_collide
 import others
 import sprites
 
 # комната 704*704
 # протяженность коридора 512 - 32
-is_stay_gates = False  # Стоят ли ворота. Она понадобилась в одном деле
+is_stay_gates = True  # Стоят ли ворота. Она понадобилась в одном месте
 
 
 class RoomCorridor:
@@ -22,9 +22,11 @@ class RoomCorridor:
         self.picture_walls = dict()
         self.top_wall = False  # есть наверху полная стена или там коридор
         self.redrawing = True
+        self.redrawing_monsters = []
         self.walls_gates = dict()
         self.torch_group = pygame.sprite.Group()
-
+        self.monster_group = pygame.sprite.Group()
+        self.drawing_monster_group = pygame.sprite.Group()
         self.add_flags()
 
     def add_flags(self):
@@ -54,13 +56,14 @@ class RoomCorridor:
 
     def render(self, screen, x_speed, y_speed, player):
         x_speed, y_speed = self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(1, 3),
-                                           functions=[self.is_render_picture_walls, self.is_collide],
+                                           functions=[self.is_render_picture_walls, is_collide],
                                            player=player, x_speed=x_speed,
                                            y_speed=y_speed)
         return x_speed, y_speed
 
     def render_passing_walls(self, screen, player):
         self.redrawing = True
+        self.redrawing_monsters = [i for i in self.drawing_monster_group]
         self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, [3],
                         functions=[self.redrawing_player],
                         player=player)
@@ -68,6 +71,8 @@ class RoomCorridor:
         [i.increment_cnt() for i in self.torch_group]
         if self.redrawing:
             player.draw(screen)
+        if self.redrawing_monsters:
+            [i.draw(screen) for i in self.redrawing_monsters]
 
     def rect_in_screen(self, x, y, width_dec, height_dec):
         """Возвращает начальные и конечные координаты ячеек комнаты, которые попадают на экран"""
@@ -88,31 +93,7 @@ class RoomCorridor:
         self.x -= x
         self.y -= y
         [i.move(x, y) for i in self.torch_group]
-
-    def is_collide(self, player, image, x, y, x_speed, y_speed):
-        # Можно сказать, создаем спрайт ячейки для проверки коллизии
-        if any([x_speed, y_speed]):
-            cell = pygame.sprite.Sprite()
-            cell.image = image
-            cell.rect = image.get_rect()
-            cell.rect.y = y
-            height = player.rect.height  # сохранить точность роста персонажа
-            cell.rect.x = x - x_speed
-            player.rect.y += player.rect.height // 1.01  # Мы смотрим коллизию по ногам, а не по телу
-            player.rect.height -= player.rect.height // 1.01
-            if pygame.sprite.collide_rect(cell, player):
-                cell.rect.x = cell.rect.x + x_speed
-                x_speed = 0
-            else:
-                cell.rect.x = cell.rect.x + x_speed
-            cell.rect.y = cell.rect.y - y_speed
-            if pygame.sprite.collide_rect(cell, player):
-                y_speed = 0
-            cell.kill()  # утечка памяти
-            player.rect.height = height  # возвращаем как было
-            player.rect.y -= player.rect.height // 1.01
-
-        return x_speed, y_speed
+        [i.move(x, y) for i in self.monster_group]
 
     def blit_tiles(self, screen, room, x_pos, y_pos, w, h, layers, functions=[], is_top_wall=False,
                    x_speed=None, y_speed=None, player=None, layers_collide=2):
@@ -131,11 +112,16 @@ class RoomCorridor:
                     image = room.get_tile_image(x, y, layer)
                     if image:
                         screen.blit(image, (x_pos + x * self.tile_size, y_pos + y * self.tile_size))
-                        if self.is_collide in functions and layer == layers_collide:
-                            x_speed, y_speed = self.is_collide(player, image, x_pos + x * self.tile_size,
-                                                               y_pos + y * self.tile_size, x_speed, y_speed)
+                        if is_collide in functions and layer == layers_collide:
+                            x_speed, y_speed = is_collide(player, image, x_pos + x * self.tile_size,
+                                                          y_pos + y * self.tile_size, x_speed, y_speed)
                         if self.redrawing and self.redrawing_player in functions:
-                            self.redrawing_player(player, x, y)
+                            self.redrawing = self.redrawing_player(player, x, y)
+                        if self.redrawing_player in functions:
+                            for i in range(len(self.redrawing_monsters) - 1, -1, -1):
+                                if not self.redrawing_player(self.redrawing_monsters[i], x, y):
+                                    del self.redrawing_monsters[i]
+
         if x_speed is not None:
             return x_speed, y_speed
 
@@ -150,12 +136,33 @@ class RoomCorridor:
                         player.rect.x + player.rect.width >= image_x >= player.rect.x or
                         player.rect.x + player.rect.width >= image_x >= player.rect.x)):
             # сложно объяснить зачем условие: делает, можно сказать, 3D объекты-декорации
-            self.redrawing = False
+            return False
+        return True
 
 
 class Room(RoomCorridor):
     def __init__(self, x, y, filename):
         super(Room, self).__init__(x, y, filename)
+
+    def add_monsters(self):
+        if self.filename_room not in ['room_with_chest', 'begin_room', 'end_room']:
+            cnt_monsters = random.randrange(4, 11)  # экспериментально
+            while cnt_monsters != 0:
+                monster = sprites.Monster(0, 0)
+                monster.rect.x = self.x + self.tile_size * random.randrange(3, self.width - 6)
+                monster.rect.y = self.y + self.tile_size * random.randrange(6, self.height - 6)
+                collide = [is_collide(monster, self.map.get_tile_image(x, y, 2), self.x + x * self.tile_size,
+                                      self.y + y * self.tile_size, 2, 2) if self.map.get_tile_image(x, y, 2) else (2, 2)
+                           for y in range(self.height) for x in range(self.width)]
+                collide = list(set(collide))
+                if pygame.sprite.spritecollideany(monster, sprites.barrel_group) or \
+                        pygame.sprite.spritecollideany(monster, sprites.torch_group) or \
+                        pygame.sprite.spritecollideany(monster, sprites.spike_group) or len(collide) > 1:
+                    monster.kill()
+                    continue
+                self.monster_group.add(monster)
+                self.drawing_monster_group.add(monster)
+                cnt_monsters -= 1
 
     def render(self, screen, x_speed, y_speed, player):
         x_speed, y_speed = super(Room, self).render(screen, x_speed, y_speed, player)
@@ -165,26 +172,41 @@ class Room(RoomCorridor):
                 if type(wall) == Gate:
                     if is_stay_gates:
                         wall.render(screen)
+                        # x_speed, y_speed = wall.is_collide(player, x_speed, y_speed)
                     else:
                         wall.cnt = 0
                 else:
                     x_speed, y_speed = self.blit_tiles(screen, wall, self.x, self.y, wall.width,
                                                        wall.height, [0], x_speed=x_speed, y_speed=y_speed,
                                                        player=player,
-                                                       functions=[self.is_collide, self.is_render_picture_walls],
+                                                       functions=[is_collide, self.is_render_picture_walls],
                                                        layers_collide=0, is_top_wall=True)
                 continue
         self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(4, len(self.map.layers)))
         return x_speed, y_speed
 
     def render_passing_walls(self, screen, x_speed, y_speed, player):
+        self.drawing_monster_group.draw(screen)
+        for key, wall in self.walls_gates.items():
+            if key == 'top' or key == 'bottom':
+                continue
+            if type(wall) == Gate:
+                if is_stay_gates:
+                    wall.render(screen)
+                    # x_speed, y_speed = wall.is_collide(player, x_speed, y_speed)
+                else:
+                    wall.cnt = 0
+                continue
         super(Room, self).render_passing_walls(screen, player)
         for key, wall in self.walls_gates.items():
             if key == 'top':
                 continue
             if type(wall) == Gate:
+                if key == 'left' or key == 'right':
+                    continue
                 if is_stay_gates:
                     wall.render(screen)
+                    # x_speed, y_speed = wall.is_collide(player, x_speed, y_speed)
                 else:
                     wall.cnt = 0
                 continue
@@ -193,7 +215,7 @@ class Room(RoomCorridor):
             # если правая стена:
             is_right = ((self.width - 2) * self.tile_size) if wall.filename.find('right') != -1 else 0
             x_speed, y_speed = self.blit_tiles(screen, wall, is_right + self.x, is_bottom + self.y, wall.width,
-                                               wall.height, range(len(wall.layers)), functions=[self.is_collide],
+                                               wall.height, range(len(wall.layers)), functions=[is_collide],
                                                x_speed=x_speed, y_speed=y_speed, player=player, layers_collide=0)
 
         return x_speed, y_speed
@@ -208,10 +230,10 @@ class Room(RoomCorridor):
             Gate(self.x + self.tile_size * self.width - self.tile_size * 2,
                  self.y + self.tile_size * self.height // 2 - 7 * self.tile_size, 'vertical'),
             'top': pytmx.load_pygame(f'{TILED_MAP_DIR}\\top_wall.tmx') if top else
-            Gate(self.x + self.tile_size * self.width // 2 - 3 * self.tile_size,
+            Gate(self.x + self.tile_size * self.width // 2 - 4 * self.tile_size,
                  self.y + self.tile_size, 'horizontal', top_or_bottom='top'),
             'bottom': pytmx.load_pygame(f'{TILED_MAP_DIR}\\bottom_wall.tmx') if bottom else
-            Gate(self.x + self.tile_size * self.width // 2 - 3 * self.tile_size,
+            Gate(self.x + self.tile_size * self.width // 2 - 4 * self.tile_size,
                  self.y + self.tile_size * self.height - self.tile_size * 3, 'horizontal'),
         }
         self.top_wall = 0 if type(self.walls_gates['top']) == Gate else 1
@@ -239,6 +261,84 @@ class Room(RoomCorridor):
             if type(wall) == Gate:
                 wall.move(x, y)
 
+    def self_move_of_monster(self):
+        if is_stay_gates and len(self.monster_group.sprites()):
+            monsters = [i for i in self.monster_group.sprites()]
+            self.monster_group = pygame.sprite.Group()
+            # print(monsters[0] == self.monster_group.sprites()[0])
+            for i, wall in enumerate(self.walls_gates.items()):
+                key, wall = wall
+                is_bottom = ((self.height - 3) * self.tile_size) if key == 'bottom' else 0  # если нижняя стена
+                # если правая стена:
+                is_right = ((self.width - 2) * self.tile_size) if key == 'right' else 0
+                if type(wall) == Gate:
+                    for i in range(len(monsters) - 1, -1, -1):
+                        monster = monsters[i]
+                        monster.random_x, monster.random_y = wall.is_collide(monster, monster.random_x,
+                                                                             monster.random_y)
+                        if 0 == monster.random_x and monster.random_y == 0:
+                            self.monster_group.add(monsters[i])
+                            del monsters[i]
+                    if not monsters:
+                        [i.self_move() for i in self.monster_group]
+                        return
+                    continue
+                for y in range(wall.height):
+                    for x in range(wall.width):
+                        image = wall.get_tile_image(x, y, 0)
+                        if image:
+                            for i in range(len(monsters) - 1, -1, -1):
+                                monster = monsters[i]
+                                monster.random_x, monster.random_y = is_collide(monster, image,
+                                                                                self.x + x * self.tile_size + is_right,
+                                                                                self.y + y * self.tile_size + is_bottom,
+                                                                                monster.random_x, monster.random_y)
+                                if 0 == monster.random_x and monster.random_y == 0:
+                                    self.monster_group.add(monsters[i])
+                                    del monsters[i]
+                            if not monsters:
+                                [i.self_move() for i in self.monster_group]
+                                return
+            for y in range(self.height):
+                for x in range(self.width):
+                    image = self.map.get_tile_image(x, y, 2)
+                    if image:
+                        for i in range(len(monsters) - 1, -1, -1):
+                            monster = monsters[i]
+                            monster.random_x, monster.random_y = is_collide(monster, image, self.x + x * self.tile_size,
+                                                                            self.y + y * self.tile_size,
+                                                                            monster.random_x, monster.random_y)
+                            if 0 == monster.random_x and monster.random_y == 0:
+                                self.monster_group.add(monsters[i])
+                                del monsters[i]
+                        if not monsters:
+                            [i.self_move() for i in self.monster_group]
+                            return
+            for i in range(len(monsters) - 1, -1, -1):
+                monster = monsters[i]
+                for j in sprites.barrel_group:
+                    monster.random_x, monster.random_y = j.is_collide(monster, monster.random_x, monster.random_y)
+                    if 0 == monster.random_x and monster.random_y == 0:
+                        self.monster_group.add(monster)
+                        del monsters[i]
+                        break
+                if not monsters:
+                    [i.self_move() for i in self.monster_group]
+                    return
+            for i in range(len(monsters) - 1, -1, -1):
+                monster = monsters[i]
+                for j in sprites.torch_group:
+                    monster.random_x, monster.random_y = j.is_collide(monster, monster.random_x, monster.random_y)
+                    if 0 == monster.random_x and monster.random_y == 0:
+                        self.monster_group.add(monster)
+                        del monsters[i]
+                        break
+                if not monsters:
+                    [i.self_move() for i in self.monster_group]
+                    return
+            self.monster_group.add(i for i in monsters)
+            [i.self_move() for i in self.monster_group]
+
 
 class Corridor(RoomCorridor):
     def __init__(self, x, y, orientation):
@@ -252,9 +352,9 @@ class Corridor(RoomCorridor):
 
     def render(self, screen, x_speed, y_speed, player):
         global is_stay_gates
-        is_stay_gates = False if \
-            self.x <= others.WIDTH // 2 <= self.x + self.width * self.tile_size and \
-            self.y <= others.HEIGHT // 2 <= self.y + self.height * self.tile_size else True
+        # is_stay_gates = False if \
+        #     self.x + 16 <= others.WIDTH // 2 <= self.x + self.width * self.tile_size - 16 and \
+        #     self.y + 16 <= others.HEIGHT // 2 <= self.y + self.height * self.tile_size - 16 else True
         x_speed, y_speed = super(Corridor, self).render(screen, x_speed, y_speed, player)
         if not is_stay_gates:
             self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(4, len(self.map.layers)))
@@ -265,7 +365,6 @@ class Corridor(RoomCorridor):
 
 
 class Gate:
-    # коллизия добавится, но скорее всего позже всех
     def __init__(self, x, y, orientation, top_or_bottom=False):
         self.map = pytmx.load_pygame(TILED_MAP_DIR + f'\\{orientation}_gate.tmx')
         # Чтобы не делать два файла ворот разных размеров (6*3 и 6*4), решил сделать так:
@@ -289,7 +388,8 @@ class Gate:
             self.increment_step()
             return
         for y in range(self.height):
-            for x in range(self.width):
+            for x in range(1 if self.orientation == 'horizontal' else 0,
+                           self.width - (1 if self.orientation == 'horizontal' else 0)):
                 for layer in range(len(self.map.layers)):
                     if self.top and y >= 2:
                         image = self.map.get_tile_image(x, y - 1, layer)
@@ -319,3 +419,20 @@ class Gate:
 
     def increment_step(self):
         self.cnt += 1 if is_stay_gates and self.cnt < 60 else 0
+
+    def is_collide(self, player, x_speed, y_speed):
+        if is_stay_gates and any([x_speed, y_speed]):
+            if self.orientation == 'vertical':
+                for y in range(self.height):
+                    image = self.map.get_tile_image(0, y, 0)
+                    if image:
+                        x_speed, y_speed = is_collide(player, image, self.x, self.y + y * self.tile_size,
+                                                      x_speed, y_speed)
+            elif self.orientation == 'horizontal':
+                for x in range(self.width):
+                    image = self.map.get_tile_image(x, 2, 0)
+                    if image:
+                        x_speed, y_speed = is_collide(player, image, x * self.tile_size + self.x,
+                                                      (3 if self.top else 2) * self.tile_size + self.y,
+                                                      x_speed, y_speed)
+        return x_speed, y_speed

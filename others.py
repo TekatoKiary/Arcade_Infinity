@@ -63,3 +63,27 @@ def collide_rect(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2):
     s3 = ax1 <= bx1 <= ax2 or ax1 <= bx2 <= ax2
     s4 = ay1 <= by1 <= ay2 or ay1 <= by2 <= ay2
     return True if ((s1 and s2) or (s3 and s4)) or ((s1 and s4) or (s3 and s2)) else False
+
+
+def is_collide(player, image, x, y, x_speed, y_speed):
+    # Можно сказать, создаем спрайт ячейки для проверки коллизии
+    if any([x_speed, y_speed]):
+        cell = pygame.sprite.Sprite()
+        cell.image = image
+        cell.rect = image.get_rect()
+        cell.rect.y = y
+        y_player = player.rect.y
+        height = player.rect.height  # сохранить точность роста персонажа
+        cell.rect.x = x - x_speed
+        player.rect.y += player.rect.height // 1.01  # Мы смотрим коллизию по ногам, а не по телу
+        player.rect.height -= player.rect.height // 1.01
+        if pygame.sprite.collide_rect(cell, player):
+            x_speed = 0
+        cell.rect.x = x
+        cell.rect.y -= y_speed
+        if pygame.sprite.collide_rect(cell, player):
+            y_speed = 0
+        cell.kill()  # утечка памяти
+        player.rect.height = height  # возвращаем как было
+        player.rect.y = y_player
+    return x_speed, y_speed

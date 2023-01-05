@@ -8,11 +8,10 @@ import time
 
 
 # Главные цели:
-# Добавить коллизию ворот с персонажами
+# Сделать еще оптимизации
 # Второстепенные цели:
 # Добавить еще карты
 # Добавить еще вариации расстановок бочек, а вместе с ними и шипы
-# Сделать еще оптимизации (на всякий случай)
 
 # Шипы отображаются только в начале, так как в скором времени поменяется способ расстановки бочек и шипов
 
@@ -62,6 +61,7 @@ class Labyrinth:
                     if barrels_coords.get(room.filename_room):
                         random_coords = random.choice(barrels_coords[room.filename_room])
                         [Barrel(room.x + room.tile_size * i[0], room.y + room.tile_size * i[1]) for i in random_coords]
+                    room.add_monsters()
                     self.map_list[y][x] = room
                     self.rooms.append(room)
                     coords_all_room.append((x, y))
@@ -81,6 +81,7 @@ class Labyrinth:
                             random_coords = random.choice(barrels_coords[room.filename_room])
                             [Barrel(room.x + room.tile_size * i[0], room.y + room.tile_size * i[1])
                              for i in random_coords]
+                        room.add_monsters()
                         self.map_list[y][x] = room
                         self.rooms.append(room)
                         coords_all_room.append((x, y))
@@ -134,6 +135,7 @@ class Labyrinth:
                             room.x, room.y, room.x + room.width * room.tile_size,
                             room.y + room.height * room.tile_size):
                 x, y = room.render_passing_walls(screen, x, y, player)
+                room.self_move_of_monster()
         for corridor in self.corridors:
             if collide_rect(0, 0, others.WIDTH, others.HEIGHT,
                             corridor.x, corridor.y, corridor.x + corridor.width * corridor.tile_size,
