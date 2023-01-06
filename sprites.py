@@ -162,11 +162,13 @@ class Gun(pygame.sprite.Sprite):
         self.reload_event = PLAYER_RELOAD_EVENT
         self.shoot_event = PLAYER_SHOOT_EVENT
 
+
+        self.original_image = image
         if image == None:
             self.image = pygame.Surface((25, 25), pygame.SRCALPHA, 32)
             pygame.draw.rect(self.image, self.bullet_color, (0, 0, 25, 25), 0)
         else:
-            self.image = image
+            self.image = pygame.transform.scale(image, (image.get_width() * 2, image.get_height() * 2))
 
         self.rotate_image = self.image
         self.rect = self.image.get_rect(center = center_pos)
@@ -199,7 +201,7 @@ class Gun(pygame.sprite.Sprite):
         if not self.is_reloading_now:
             if self.ammo_amount != 0:
                 self.ammo_amount -= 1
-                Bullet(self, (self.cord_x, self.cord_y), target_pos)
+                Bullet(self, target_pos)
             else:
                 self.is_reloading_now = True
                 pygame.time.set_timer(self.reload_event, self.reload_time)
@@ -210,7 +212,7 @@ class Gun(pygame.sprite.Sprite):
 
     def rotate(self, target):
         self.image = pygame.transform.rotate(
-            self.rotate_image, self.math_angle(target))
+            self.rotate_image, self.math_angle(target) - 90)
 
     def math_angle(self, target):
         rel_x, rel_y = target[0] - self.cord_x - \
@@ -220,7 +222,7 @@ class Gun(pygame.sprite.Sprite):
         return angle
     
     def copy(self):
-        return Gun(player=self.player, target_group=monster_sprites, can_be_raised=self.can_be_raised, name=self.name, center_pos=self.center_pos, image=self.image, destroy_bullets=self.destroy_bullets, \
+        return Gun(player=self.player, target_group=monster_sprites, can_be_raised=self.can_be_raised, name=self.name, center_pos=self.center_pos, image=self.original_image, destroy_bullets=self.destroy_bullets, \
             damage_type=self.damage_type, bullet_image=None, bullet_color=self.bullet_color, bullet_size=self.bullet_size, bullet_speed=self.bullet_speed, \
                 fire_rate=self.fire_rate, shooting_accuracy=self.shooting_accuracy, damage=self.damage, splash_damage=self.splash_damage, \
                     splash_radius=self.splash_radius, ammo=self.ammo, reload_time=self.reload_time)
@@ -237,14 +239,15 @@ class Gun(pygame.sprite.Sprite):
 
 
 class Bullet(pygame.sprite.Sprite):
-    def __init__(self, gun, cords_from=(0, 0), cords_to=(0, 0)):
+    def __init__(self, gun, cords_to=(0, 0)):
         super().__init__(all_sprites)
         self.add(bullet_group)
 
         self.gun = gun
         self.target_group = self.gun.target_group
-        self.cords_from = cords_from
         self.cords_to = cords_to
+        self.cords_from = (self.gun.rect.centerx, self.gun.rect.centery)
+        
 
         self.cords = [self.cords_from[0], self.cords_from[1]]
         
@@ -384,13 +387,13 @@ class Monster(pygame.sprite.Sprite):
             self.active_gun.shoot((self.player.rect.centerx, self.player.rect.centery))
             self.shooting_timer = 10
     
-    def walk(self, movement_direction=1, random_direction=(1, 1)):
+    def walk(self, movement_direction=1, random_direction=1):
         distance = max(math.sqrt((self.rect.centerx - self.player.rect.centerx) ** 2 + (self.rect.centery - self.player.rect.centery) ** 2), 1)
         vx = (self.rect.centerx - self.player.rect.centerx) / distance / 60 * self.running_speed
         vy = (self.rect.centery - self.player.rect.centery) / distance / 60 * self.running_speed
 
-        self.cord_x -= movement_direction * vx * random_direction[0]
-        self.cord_y -= movement_direction * vy * random_direction[1]
+        self.cord_x -= movement_direction * vx * random_direction
+        self.cord_y -= movement_direction * vy * random_direction
         
     def run_away(self):
         if self.player_avoidance:
@@ -418,7 +421,7 @@ class Monster(pygame.sprite.Sprite):
             else:
                 self.movement_direction = self.movement_direction * -1
                 self.movement_timer = 10
-            self.walk(random_direction=(self.movement_direction / 2, self.movement_direction / 2))
+            self.walk(random_direction=self.movement_direction / 2)
 
     def update(self):
         if self.hp_left <= 0:

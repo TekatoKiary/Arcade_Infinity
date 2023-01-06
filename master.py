@@ -42,8 +42,11 @@ if __name__ == '__main__':
         # Расстановщик мин, Пушка с бесконечными патронами
     transperent_image = pygame.Surface((5, 5), pygame.SRCALPHA, 32)
     pl = sprites.Player((100, 100), '[image_name]')
-    ak47 = sprites.Gun(player=pl, name='ak47', center_pos=(200, 200), ammo=999, damage=10, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150, shooting_accuracy=0.95)
-    pistol = sprites.Gun(player=pl, name='pistol', center_pos=(300, 200), ammo=-1)
+
+    ak47_img = ui.cut_image(ui.load_image(name='guns_outlined_free.png', path='textures'), (64, 31), (30, 15))
+    ak47 = sprites.Gun(player=pl, name='ak47', image=ak47_img, center_pos=(200, 200), ammo=999, damage=100, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150, shooting_accuracy=0.95)
+    pistol_img = ui.cut_image(ui.load_image(name='guns_outlined_free.png', path='textures'), (49, 35), (14, 10))
+    pistol = sprites.Gun(player=pl, name='pistol', center_pos=(300, 200), ammo=-1, image=pistol_img)
 
     fists = sprites.Gun(player=pl, name='fists', ammo=-1, target_group=sprites.player_sprite, damage=15, image=transperent_image, bullet_image=transperent_image)
     m1 = sprites.Monster(player=pl, center_pos=(300, 100), attack_range=50, image=ui.cut_image(ui.load_image(name='Ghoul Sprite Sheet.png', path='textures'), (3, 9), (27, 23)), gun=fists, player_avoidance=False, running_speed=70, move_randomly=False)
@@ -71,13 +74,24 @@ if __name__ == '__main__':
     shop = ui.Shop(player=pl, pos=(590, 60), image_pos=(0, 84), image_size=(210, 312), sprite_group=(sprites.ui_sprites, sprites.all_sprites))
 
         # Тестовое добавление товаров в магазин
-    Uzi = ui.ShopItems(sprites.Gun(player=pl, name='Uzi', fire_rate=100, shooting_accuracy=0.6, damage=5, ammo=30, reload_time=2000), 1)
-    Sniper = ui.ShopItems(sprites.Gun(player=pl, name='Sniper', fire_rate=2000, damage=100, ammo=20, reload_time=3000, bullet_color=(255, 128, 128), bullet_speed=600), 1)
-    GrenadeLauncher = ui.ShopItems(sprites.Gun(player=pl, name='GrenadeLauncher', fire_rate=1000, shooting_accuracy=0.8, damage=30, damage_type='splash', splash_damage=30, splash_radius=100, bullet_color=(64, 64, 196)), 1)
-    BallLightningLauncher = ui.ShopItems(sprites.Gun(player=pl, name='BallLightningLauncher', fire_rate=100, damage=100, ammo=1, reload_time=5000, destroy_bullets=False, bullet_color=(128, 128, 255), bullet_speed=50, bullet_size=(30, 30)), 1)
-    Infinity = ui.ShopItems(sprites.Gun(player=pl, name='Infinity', fire_rate=300, damage=30, bullet_color=(196, 196, 64), ammo=-1), 1)
-    MinePlacer = ui.ShopItems(sprites.Gun(player=pl, bullet_color=(196, 128, 64), damage=100, bullet_speed=0, ammo=1, reload_time=10, bullet_size=(20, 20)), 1)
-    # Earthquake = ui.ShopItems(sprites.Gun(player=pl, name='Earthquake', bullet_color=(64, 64, 64), fire_rate=500, damage=0, damage_type='splash', splash_damage=10, splash_radius=1000, bullet_speed=2000), 1)
+    Uzi_img = ui.cut_image(ui.load_image(name='guns_outlined_free.png', path='textures'), (32, 93), (15, 18))
+    Uzi = ui.ShopItems(sprites.Gun(player=pl, name='Uzi', fire_rate=100, shooting_accuracy=0.6, damage=5, ammo=30, reload_time=2000, image=Uzi_img), 1)
+
+    Sniper_img = ui.cut_image(ui.load_image(name='guns_outlined_free.png', path='textures'), (96, 34), (32, 13))
+    Sniper = ui.ShopItems(sprites.Gun(player=pl, name='Sniper', fire_rate=2000, damage=100, ammo=20, reload_time=3000, bullet_color=(255, 128, 128), bullet_speed=600, image=Sniper_img), 1)
+   
+    GrenadeLauncher_img = ui.cut_image(ui.load_image(name='guns_outlined_free.png', path='textures'), (64, 15), (26, 14))
+    GrenadeLauncher = ui.ShopItems(sprites.Gun(player=pl, name='GrenadeLauncher', fire_rate=1000, shooting_accuracy=0.8, damage=30, damage_type='splash', splash_damage=30, splash_radius=100, bullet_color=(64, 64, 196), image=GrenadeLauncher_img), 1)
+   
+    BallLightningLauncher_img = ui.cut_image(ui.load_image(name='guns_outlined_free.png', path='textures'), (99, 96), (17, 21))
+    BallLightningLauncher = ui.ShopItems(sprites.Gun(player=pl, name='BallLightningLauncher', fire_rate=100, damage=100, ammo=1, reload_time=5000, destroy_bullets=False, bullet_color=(128, 128, 255), bullet_speed=50, bullet_size=(30, 30), image=BallLightningLauncher_img), 1)
+  
+    Infinity_img = ui.cut_image(ui.load_image(name='guns_outlined_free.png', path='textures'), (34, 50), (14, 12))
+    Infinity = ui.ShopItems(sprites.Gun(player=pl, name='Infinity', fire_rate=300, damage=30, bullet_color=(196, 196, 64), ammo=-1, image=Infinity_img), 1)
+    
+    MinePlacer_img = ui.cut_image(ui.load_image(name='guns_outlined_free.png', path='textures'), (0, 115), (6, 11))
+    MinePlacer = ui.ShopItems(sprites.Gun(player=pl, bullet_color=(196, 128, 64), damage=100, bullet_speed=0, ammo=1, reload_time=10, bullet_size=(20, 20), image=MinePlacer_img), 1)
+
     shop.add_item(Uzi, Sniper, GrenadeLauncher, BallLightningLauncher, Infinity, MinePlacer)
     # Респавн мобов для тестов
     respawn_monsters = pygame.USEREVENT + 3
@@ -132,9 +146,9 @@ if __name__ == '__main__':
                     pl.active_gun.can_shoot = True
             
             # Респавн мобов 
-            if event.type == respawn_monsters:
-                for monster in sprites.dead_monsters:
-                    monster.respawn()
+            # if event.type == respawn_monsters:
+            #     for monster in sprites.dead_monsters:
+            #         monster.respawn()
 
         pl.move()
         update_hp_bar(player_hp_bar, pl.hp_left / pl.max_hp)
