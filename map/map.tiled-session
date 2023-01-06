@@ -3,10 +3,10 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "ready_map/horizontal_gate.tmx",
+    "activeFile": "ready_map/right_wall.tmx",
     "expandedProjectPaths": [
-        "ready_map",
-        "."
+        ".",
+        "ready_map"
     ],
     "file.lastUsedOpenFilter": "Все файлы (*)",
     "fileStates": {
@@ -106,7 +106,7 @@
             "scale": 0.92,
             "selectedLayer": 4,
             "viewCenter": {
-                "x": 409.2391304347826,
+                "x": 288.04347826086956,
                 "y": 96.19565217391306
             }
         },
@@ -114,8 +114,8 @@
             "scale": 1.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 59.33333333333333,
-                "y": 19.333333333333332
+                "x": 13,
+                "y": 19.666666666666657
             }
         },
         "ready_map/left_right_wall.tmx": {
@@ -130,8 +130,8 @@
             "scale": 0.8002130681818181,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 16.87050678973995,
-                "y": 351.7813082453182
+                "x": 16.245673204934803,
+                "y": 353.0309754149286
             }
         },
         "ready_map/mainlevbuild.tsx": {
@@ -151,8 +151,8 @@
             "scale": 0.75,
             "selectedLayer": 2,
             "viewCenter": {
-                "x": 759.3333333333333,
-                "y": 251.33333333333331
+                "x": 351.99999999999994,
+                "y": 352.66666666666663
             }
         },
         "ready_map/map3.tmx": {
@@ -266,7 +266,7 @@
             "scale": 0.882528409090909,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 351.26347980041845,
+                "x": 351.2634798004185,
                 "y": 40.225333977144714
             }
         },
@@ -274,8 +274,8 @@
             "scale": 0.9028044871794871,
             "selectedLayer": 4,
             "viewCenter": {
-                "x": -17.722552587201562,
-                "y": 246.45424691577173
+                "x": 64.24425312860564,
+                "y": 312.9138191177776
             }
         },
         "ready_map/vertical_gate.tmx": {
@@ -304,7 +304,7 @@
         "ready_map/vertical_corridor.tmx",
         "ready_map/horizontal_corridor.tmx",
         "ready_map/horizontal_gate.tmx",
-        "ready_map/horizontal_gate.tmx"
+        "ready_map/right_wall.tmx"
     ],
     "project": "map.tiled-project",
     "recentFiles": [
@@ -315,11 +315,11 @@
         "ready_map/vertical_corridor.tmx",
         "ready_map/horizontal_corridor.tmx",
         "ready_map/horizontal_gate.tmx",
+        "ready_map/right_wall.tmx",
         "ready_map/vertical_gate.tmx",
         "ready_map/base_map_with_gates.tmx",
         "ready_map/map3.tmx",
-        "ready_map/picture_wall4.tmx",
-        "ready_map/picture_wall2.tmx"
+        "ready_map/picture_wall4.tmx"
     ],
     "tileset.lastUsedFormat": "tsx",
     "tileset.spacing": 0,

@@ -26,7 +26,6 @@ class RoomCorridor:
         self.walls_gates = dict()
         self.torch_group = pygame.sprite.Group()
         self.monster_group = pygame.sprite.Group()
-        self.drawing_monster_group = pygame.sprite.Group()
         self.add_flags()
 
     def add_flags(self):
@@ -63,7 +62,7 @@ class RoomCorridor:
 
     def render_passing_walls(self, screen, player):
         self.redrawing = True
-        self.redrawing_monsters = [i for i in self.drawing_monster_group]
+        self.redrawing_monsters = [i for i in self.monster_group]
         self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, [3],
                         functions=[self.redrawing_player],
                         player=player)
@@ -161,7 +160,6 @@ class Room(RoomCorridor):
                     monster.kill()
                     continue
                 self.monster_group.add(monster)
-                self.drawing_monster_group.add(monster)
                 cnt_monsters -= 1
 
     def render(self, screen, x_speed, y_speed, player):
@@ -186,7 +184,7 @@ class Room(RoomCorridor):
         return x_speed, y_speed
 
     def render_passing_walls(self, screen, x_speed, y_speed, player):
-        self.drawing_monster_group.draw(screen)
+        self.monster_group.draw(screen)
         for key, wall in self.walls_gates.items():
             if key == 'top' or key == 'bottom':
                 continue
@@ -264,8 +262,6 @@ class Room(RoomCorridor):
     def self_move_of_monster(self):
         if is_stay_gates and len(self.monster_group.sprites()):
             monsters = [i for i in self.monster_group.sprites()]
-            self.monster_group = pygame.sprite.Group()
-            # print(monsters[0] == self.monster_group.sprites()[0])
             for i, wall in enumerate(self.walls_gates.items()):
                 key, wall = wall
                 is_bottom = ((self.height - 3) * self.tile_size) if key == 'bottom' else 0  # если нижняя стена
@@ -277,49 +273,52 @@ class Room(RoomCorridor):
                         monster.random_x, monster.random_y = wall.is_collide(monster, monster.random_x,
                                                                              monster.random_y)
                         if 0 == monster.random_x and monster.random_y == 0:
-                            self.monster_group.add(monsters[i])
                             del monsters[i]
                     if not monsters:
                         [i.self_move() for i in self.monster_group]
                         return
                     continue
-                for y in range(wall.height):
-                    for x in range(wall.width):
+                for i in range(len(monsters) - 1, -1, -1):
+                    monster = monsters[i]
+                    x = (monster.rect.x + monster.random_x - self.x - is_right + (
+                        monster.rect.width if monster.random_x >= 0 else 0)) // self.tile_size
+                    y = int(
+                        monster.rect.y + monster.rect.height // 1.01 + monster.random_y - self.y - is_bottom + (
+                            (monster.rect.height - monster.rect.height // 1.1) if monster.random_y >= 0 else 0)) \
+                        // self.tile_size
+
+                    if -1 < x < wall.width and -1 < y < wall.height:
                         image = wall.get_tile_image(x, y, 0)
                         if image:
-                            for i in range(len(monsters) - 1, -1, -1):
-                                monster = monsters[i]
-                                monster.random_x, monster.random_y = is_collide(monster, image,
-                                                                                self.x + x * self.tile_size + is_right,
-                                                                                self.y + y * self.tile_size + is_bottom,
-                                                                                monster.random_x, monster.random_y)
-                                if 0 == monster.random_x and monster.random_y == 0:
-                                    self.monster_group.add(monsters[i])
-                                    del monsters[i]
-                            if not monsters:
-                                [i.self_move() for i in self.monster_group]
-                                return
-            for y in range(self.height):
-                for x in range(self.width):
+                            monster.random_x = 0
+                            monster.random_y = 0
+                            del monsters[i]
+                if not monsters:
+                    [i.self_move() for i in self.monster_group]
+                    return
+            for i in range(len(monsters) - 1, -1, -1):
+                monster = monsters[i]
+                x = (monster.rect.x + monster.random_x - self.x + (
+                    monster.rect.width if monster.random_x >= 0 else 0)) // self.tile_size
+                y = int(
+                    monster.rect.y + monster.rect.height // 1.01 + monster.random_y - self.y + (
+                        (monster.rect.height - monster.rect.height // 1.1) if monster.random_y >= 0 else 0)) \
+                    // self.tile_size
+
+                if -1 < x < self.width and -1 < y < self.height:
                     image = self.map.get_tile_image(x, y, 2)
                     if image:
-                        for i in range(len(monsters) - 1, -1, -1):
-                            monster = monsters[i]
-                            monster.random_x, monster.random_y = is_collide(monster, image, self.x + x * self.tile_size,
-                                                                            self.y + y * self.tile_size,
-                                                                            monster.random_x, monster.random_y)
-                            if 0 == monster.random_x and monster.random_y == 0:
-                                self.monster_group.add(monsters[i])
-                                del monsters[i]
-                        if not monsters:
-                            [i.self_move() for i in self.monster_group]
-                            return
+                        monster.random_x = 0
+                        monster.random_y = 0
+                        del monsters[i]
+            if not monsters:
+                [i.self_move() for i in self.monster_group]
+                return
             for i in range(len(monsters) - 1, -1, -1):
                 monster = monsters[i]
                 for j in sprites.barrel_group:
                     monster.random_x, monster.random_y = j.is_collide(monster, monster.random_x, monster.random_y)
                     if 0 == monster.random_x and monster.random_y == 0:
-                        self.monster_group.add(monster)
                         del monsters[i]
                         break
                 if not monsters:
@@ -330,13 +329,11 @@ class Room(RoomCorridor):
                 for j in sprites.torch_group:
                     monster.random_x, monster.random_y = j.is_collide(monster, monster.random_x, monster.random_y)
                     if 0 == monster.random_x and monster.random_y == 0:
-                        self.monster_group.add(monster)
                         del monsters[i]
                         break
                 if not monsters:
                     [i.self_move() for i in self.monster_group]
                     return
-            self.monster_group.add(i for i in monsters)
             [i.self_move() for i in self.monster_group]
 
 
