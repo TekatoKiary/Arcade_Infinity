@@ -10,7 +10,7 @@ FPS = 60
 
 PICTURE_WAllS = [
     TILED_MAP_DIR + f'\\picture_wall{i}.tmx' for i in range(1, 9)
-]
+] # Рисунки на стене
 # Переделать(скорее всего)
 barrels_coords = {'map1': [[]], 'map2': [[]], 'map3': [[]]}
 # Пока только один вариант на каждую карту. Будет время добавлю другие
@@ -37,8 +37,8 @@ barrels_coords['map3'] += [[*((i, 15 - 1) for i in range(13, 30, 2)),
                             ]]
 
 
-def load_image(name, colorkey=None):
-    fullname = os.path.join('sprites', name)
+def load_image_textures(name, colorkey=None):
+    fullname = os.path.join('textures', name)
     if not os.path.isfile(fullname):
         print(f"Файл с изображением '{fullname}' не найден")
         sys.exit()
@@ -65,9 +65,9 @@ def collide_rect(ax1, ay1, ax2, ay2, bx1, by1, bx2, by2):
     return True if ((s1 and s2) or (s3 and s4)) or ((s1 and s4) or (s3 and s2)) else False
 
 
-def is_collide(player, image, x, y, x_speed, y_speed):
-    # Можно сказать, создаем спрайт ячейки для проверки коллизии
+def is_collide_with_speed(player, image, x, y, x_speed, y_speed):
     if any([x_speed, y_speed]):
+        # Можно сказать, создаем спрайт ячейки для проверки коллизии
         cell = pygame.sprite.Sprite()
         cell.image = image
         cell.rect = image.get_rect()
@@ -87,3 +87,25 @@ def is_collide(player, image, x, y, x_speed, y_speed):
         player.rect.height = height  # возвращаем как было
         player.rect.y = y_player
     return x_speed, y_speed
+
+
+def is_collide(player, image, x, y, change_player=True):
+    # Можно сказать, создаем спрайт ячейки для проверки коллизии
+    cell = pygame.sprite.Sprite()
+    cell.image = image
+    cell.rect = image.get_rect()
+    cell.rect.y = y
+
+    y_player = player.rect.y
+    height = player.rect.height  # сохранить точность роста персонажа
+    cell.rect.x = x
+    if change_player:  # он понадобится в одном месте
+        player.rect.y += player.rect.height // 1.01  # Мы смотрим коллизию по ногам, а не по телу
+        player.rect.height -= player.rect.height // 1.01
+    t = False
+    if pygame.sprite.collide_rect(cell, player):
+        t = True
+    player.rect.height = height  # возвращаем как было
+    player.rect.y = y_player
+    cell.kill()
+    return t

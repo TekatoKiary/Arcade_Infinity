@@ -3,7 +3,7 @@ import random
 import others
 from others import collide_rect, FPS, barrels_coords
 from room import Room, Corridor
-from sprites import Player, Barrel, barrel_group, Spike, torch_group, spike_group
+from sprites import Player, Barrel, Spike, torch_group, spike_group
 import time
 
 
@@ -14,6 +14,16 @@ import time
 # Добавить еще вариации расстановок бочек, а вместе с ними и шипы
 
 # Шипы отображаются только в начале, так как в скором времени поменяется способ расстановки бочек и шипов
+
+# Комната 704*704
+# протяженность коридора различна: длина вертикального - 608, горизонтального - 576. Но с учетом особенностями
+# соединении с комнатами они выравниваются
+
+# Ключевой момент: карта представляет собой квадрат 4*4, в котором комнаты случайно выбирают свои координаты.
+# Следовательно, с учетом коридоров между ними карта получается с длиной около 4500 и такой шириной.
+# Тогда размер 4500*4500.
+# Координаты относительно квадрата 4*4 нужны только для комнат и коридоров.
+# Другие классы используют координаты относительно этих же комнат за исключением немногих
 
 class Labyrinth:
     def __init__(self):
@@ -60,7 +70,8 @@ class Labyrinth:
                         if i < 2 else Room(x, y, f'end_room')
                     if barrels_coords.get(room.filename_room):
                         random_coords = random.choice(barrels_coords[room.filename_room])
-                        [Barrel(room.x + room.tile_size * i[0], room.y + room.tile_size * i[1]) for i in random_coords]
+                        [room.barrel_group.add(Barrel(room.x + room.tile_size * i[0], room.y + room.tile_size * i[1]))
+                         for i in random_coords]
                     room.add_monsters()
                     self.map_list[y][x] = room
                     self.rooms.append(room)
@@ -79,8 +90,9 @@ class Labyrinth:
                                     f'map{random.randrange(1, 4)}' if chest_room != count_room else 'room_with_chest')
                         if barrels_coords.get(room.filename_room):
                             random_coords = random.choice(barrels_coords[room.filename_room])
-                            [Barrel(room.x + room.tile_size * i[0], room.y + room.tile_size * i[1])
-                             for i in random_coords]
+                            [room.barrel_group.add(
+                                Barrel(room.x + room.tile_size * i[0], room.y + room.tile_size * i[1]))
+                                for i in random_coords]
                         room.add_monsters()
                         self.map_list[y][x] = room
                         self.rooms.append(room)
@@ -107,7 +119,6 @@ class Labyrinth:
             self.map_list[y][x].set_walls(*walls)
         [i.move(x_move, y_move) for i in self.rooms]
         [i.move(x_move, y_move) for i in self.corridors]
-        [i.move(x_move, y_move) for i in barrel_group]
         [i.move(x_move, y_move) for i in torch_group]
         [i.move(x_move, y_move) for i in spike_group]
 
@@ -115,6 +126,22 @@ class Labyrinth:
         start_time = time.time()
         x, y = move()
         player.move(x, y)
+
+        x, y = self.render(x, y)
+
+        spike_group.draw(screen)
+        player.draw(screen)
+        [i.draw(screen) for i in torch_group]
+
+        x, y = self.render_passing_walls(x, y)
+
+        x, y = self.collision_with_walls_or_torches(x, y)
+
+        if x or y:
+            self.move_objects(x, y)
+        print("--- %s seconds ---" % (time.time() - start_time))
+
+    def render(self, x, y):
         for room in self.rooms:
             if collide_rect(0, 0, others.WIDTH, others.HEIGHT,
                             room.x, room.y, room.x + room.width * room.tile_size,
@@ -125,11 +152,9 @@ class Labyrinth:
                             corridor.x, corridor.y, corridor.x + corridor.width * corridor.tile_size,
                             corridor.y + corridor.height * corridor.tile_size):
                 x, y = corridor.render(screen, x, y, player)
-        spike_group.draw(screen)
-        barrel_group.draw(screen)
-        player.draw(screen)
-        torch_group.draw(screen)
+        return x, y
 
+    def render_passing_walls(self, x, y):
         for room in self.rooms:
             if collide_rect(0, 0, others.WIDTH, others.HEIGHT,
                             room.x, room.y, room.x + room.width * room.tile_size,
@@ -141,24 +166,20 @@ class Labyrinth:
                             corridor.x, corridor.y, corridor.x + corridor.width * corridor.tile_size,
                             corridor.y + corridor.height * corridor.tile_size):
                 corridor.render_passing_walls(screen, player)
+        return x, y
 
-        [i.increment_cnt() for i in torch_group]
-        [i.increment_cnt() for i in spike_group]
-        # for i in barrel_group:
-        #     if not any([x, y]):
-        #         break
-        #     x, y = i.is_collide(player, x, y)
+    def collision_with_walls_or_torches(self, x, y):
         for i in torch_group:
             if not any([x, y]):
                 break
             x, y = i.is_collide(player, x, y)
-        if x or y:
-            [i.move(x, y) for i in self.rooms]
-            [i.move(x, y) for i in self.corridors]
-            [i.move(x, y) for i in barrel_group]
-            [i.move(x, y) for i in torch_group]
-            [i.move(x, y) for i in spike_group]
-        print("--- %s seconds ---" % (time.time() - start_time))
+        return x, y
+
+    def move_objects(self, x, y):
+        [i.move(x, y) for i in self.rooms]
+        [i.move(x, y) for i in self.corridors]
+        [i.move(x, y) for i in torch_group]
+        [i.move(x, y) for i in spike_group]
 
 
 def move():
