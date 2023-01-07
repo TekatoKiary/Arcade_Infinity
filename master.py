@@ -63,7 +63,7 @@ if __name__ == '__main__':
     player_info.image.blit(player_icon, (13, 12, pl.image.get_width(), pl.image.get_height()))
         # /\ /\ /\ /\ /\ /\
     player_hp_bar = ui.Img(pos=(20 + 54, 20 + 4), image_pos=(214, 0), image_size=(94, 18), sprite_group=(sprites.all_sprites, sprites.ui_sprites))
-    shop_button = ui.Buttons(pos=(720, 20), sprite_group=(sprites.all_sprites, sprites.ui_sprites), image_pos=(192, 52), image_size=(60, 28))
+    shop_button = ui.Buttons(pos=(720, 20), sprite_group=(sprites.all_sprites, sprites.ui_sprites), image_pos=(138, 52), image_size=(65, 28))
     player_balance = ui.Text(pos=(90, 50), sprite_group=sprites.all_sprites)
     player_ammo = ui.Text(pos=(720, 460), sprite_group=sprites.all_sprites)
     info1 = ui.Text(pos=(30, 400), sprite_group=sprites.all_sprites, text='press W, A, S, D to move', size=14)
@@ -97,72 +97,156 @@ if __name__ == '__main__':
     respawn_monsters = pygame.USEREVENT + 3
     pygame.time.set_timer(respawn_monsters, 10000)
 
+    # ================================================================
+
+    def set_game_paused(bool):
+        global game_paused
+        if bool:
+            game_paused = True
+            for sprite in pause_group:
+                sprite.add(sprites.all_sprites)
+        else:
+            game_paused = False
+            for sprite in pause_group:
+                sprites.all_sprites.remove(sprite)
+    
+    def set_game_started(bool):
+        global game_started
+        if bool:
+            game_started = True
+            for sprite in main_menu_group:
+                sprite.add(sprites.all_sprites)
+        else:
+            game_started = False
+            for sprite in main_menu_group:
+                sprites.all_sprites.remove(sprite)
+
+    pause_group = pygame.sprite.Group()
+    main_menu_group = pygame.sprite.Group()
+
+    pause_button = ui.Buttons((390, 10), image_pos=(320, 44), image_size=(36, 36), sprite_group=(sprites.all_sprites, sprites.ui_sprites))
+
+    black_bg = pygame.sprite.Sprite(pause_group)
+    black_bg.image = pygame.Surface((1920, 1080), pygame.SRCALPHA, 32)
+    black_bg.rect = black_bg.image.get_rect()
+    black_bg.image.set_alpha(128)
+    pygame.draw.rect(black_bg.image, (0, 0, 0), (0, 0, 1920, 1080))
+
+    buttons_bg = ui.Img(pos=(280, 80), image_pos=(0, 400), image_size=(152, 132), sprite_group=(pause_group), scale=1.5)
+    resume_button = ui.Buttons(pos=(345, 130), image_pos=(214, 216), image_size=(65, 28), sprite_group=(pause_group), scale=1.5)
+    exit_button_on_pause = ui.Buttons(pos=(345, 180), image_pos=(214, 248), image_size=(65, 28), sprite_group=(pause_group), scale=1.5)
+
+    main_menu_bg = ui.Img(pos=(0, 0), image='main_menu_bg2.png', image_pos=(0, 0), image_size=(800, 500), sprite_group=main_menu_group)
+
+    start_game_button = ui.Buttons(pos=(345, 180), image_pos=(0, 52), image_size=(65, 28), sprite_group=(main_menu_group), scale=2)
+    exit_button_on_main_menu = ui.Buttons(pos=(345, 240), image_pos=(214, 248), image_size=(65, 28), sprite_group=(main_menu_group), scale=2)
+
+    game_started = False
+    game_paused = False
+
+    set_game_started(False)
+
     while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
+        if not game_started:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
 
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                can_shoot = True
-                # ===============================================================================
-                for sprite in sprites.ui_sprites:
-                    # Если навелся на UI, то стрелять нельзя
-                    if sprite.mouse_hovered():
-                        can_shoot = False
-                        # Открыть магазин
-                        if shop_button.mouse_clicked():
-                            open_shop()
-                        # Листать страницы магазина
-                        if shop.button_back.mouse_clicked() or shop.button_next.mouse_clicked():
-                            shop.flip_shop_page()
-                # ===============================================================================
-                # Проверка нажатия на кнопку покупки
-                for bg in shop.backgrounds:
-                    if bg.mouse_clicked() and shop.is_visible and bg in sprites.all_sprites:
-                        shop.buy_item(bg.item)
-                if can_shoot:
-                    pl.on_clicked(event)
-
-                # Проверка нажатия на ячейки инвентаря
-                for i, button in enumerate(pl.cells.buttons):
-                    if button.mouse_clicked():
-                        pl.switch_gun(i)
-                # ===============================================================================
-            
-            if event.type == pygame.KEYDOWN:
-                pl.on_k_pressed(event)
-            
-            # Перезарядка текущего оружия
-            if event.type == pl.active_gun.reload_event:
-                pl.active_gun.reload_ammo()
-                pygame.time.set_timer(pl.active_gun.reload_event, 0)
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if start_game_button.mouse_clicked():
+                        set_game_started(True)
+                        for sprite in main_menu_group:
+                            sprite.kill()
+                            sprite.add(main_menu_group)
+                    if exit_button_on_main_menu.mouse_clicked():
+                        running = False
                 
-            # Стрельба
-            if event.type == pl.active_gun.shoot_event:
-                if pygame.mouse.get_pressed()[0]:
-                    pl.active_gun.shoot(target_pos=pygame.mouse.get_pos())
-                else:
-                    pygame.time.set_timer(pl.active_gun.shoot_event, 0)
-                    pl.active_gun.can_shoot = True
-            
-            # Респавн мобов 
-            # if event.type == respawn_monsters:
-            #     for monster in sprites.dead_monsters:
-            #         monster.respawn()
 
-        pl.move()
-        update_hp_bar(player_hp_bar, pl.hp_left / pl.max_hp)
-        update_player_balance(player_balance)
-        update_player_ammo(player_ammo)
-        update_fps(fps)
+            main_menu_group.draw(screen)
 
-        screen.fill((0, 0, 0))
+        elif game_paused:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if resume_button.mouse_clicked():
+                        set_game_paused(False)
+                    
+                    if exit_button_on_pause.mouse_clicked():
+                        set_game_paused(False)
+                        set_game_started(False)
+                        
+            sprites.all_sprites.draw(screen)
 
-        sprites.all_sprites.update()
-        sprites.all_sprites.draw(screen)
-        sprites.gun_sprites.update()
-        
+        else:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    can_shoot = True
+                    # ===============================================================================
+                    for sprite in sprites.ui_sprites:
+                        # Если навелся на UI, то стрелять нельзя
+                        if sprite.mouse_hovered():
+                            can_shoot = False
+                            # Открыть магазин
+                            if shop_button.mouse_clicked():
+                                open_shop()
+                            # Листать страницы магазина
+                            if shop.button_back.mouse_clicked() or shop.button_next.mouse_clicked():
+                                shop.flip_shop_page()
+                            
+                            if pause_button.mouse_clicked():
+                                set_game_paused(True)
+                    # ===============================================================================
+                    # Проверка нажатия на кнопку покупки
+                    for bg in shop.backgrounds:
+                        if bg.mouse_clicked() and shop.is_visible and bg in sprites.all_sprites:
+                            shop.buy_item(bg.item)
+                    if can_shoot:
+                        pl.on_clicked(event)
+
+                    # Проверка нажатия на ячейки инвентаря
+                    for i, button in enumerate(pl.cells.buttons):
+                        if button.mouse_clicked():
+                            pl.switch_gun(i)
+                    # ===============================================================================
+                
+                if event.type == pygame.KEYDOWN:
+                    pl.on_k_pressed(event)
+                
+                # Перезарядка текущего оружия
+                if event.type == pl.active_gun.reload_event:
+                    pl.active_gun.reload_ammo()
+                    pygame.time.set_timer(pl.active_gun.reload_event, 0)
+                    
+                # Стрельба
+                if event.type == pl.active_gun.shoot_event:
+                    if pygame.mouse.get_pressed()[0]:
+                        pl.active_gun.shoot(target_pos=pygame.mouse.get_pos())
+                    else:
+                        pygame.time.set_timer(pl.active_gun.shoot_event, 0)
+                        pl.active_gun.can_shoot = True
+                
+                # Респавн мобов 
+                # if event.type == respawn_monsters:
+                #     for monster in sprites.dead_monsters:
+                #         monster.respawn()
+
+            pl.move()
+            update_hp_bar(player_hp_bar, pl.hp_left / pl.max_hp)
+            update_player_balance(player_balance)
+            update_player_ammo(player_ammo)
+            update_fps(fps)
+
+            screen.fill((0, 0, 0))
+
+            sprites.all_sprites.update()
+            sprites.all_sprites.draw(screen)
+            sprites.gun_sprites.update()
 
         pygame.display.update()
         clock.tick(FPS)
+
     pygame.quit()

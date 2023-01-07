@@ -19,9 +19,10 @@ def cut_image(image, start_pos, size):
 
 
 class Img(pygame.sprite.Sprite):
-    def __init__(self, pos=(0, 0), image='main_ui.png', image_pos=(0, 0), image_size=(0, 0), sprite_group=[]):
+    def __init__(self, pos=(0, 0), image='main_ui.png', image_pos=(0, 0), image_size=(0, 0), sprite_group=[], scale=1):
         super().__init__(sprite_group)
         self.image = cut_image(load_image(image), image_pos, image_size)
+        self.image = pygame.transform.scale(self.image, (self.image.get_width() * scale, self.image.get_height() * scale))
         self.rect = self.image.get_rect()
 
         self.rect.x = pos[0]
@@ -38,8 +39,8 @@ class Img(pygame.sprite.Sprite):
 
 
 class Buttons(Img):
-    def __init__(self, pos=(0, 0), image='main_ui.png', image_pos=(0, 0), image_size=(0, 0), sprite_group=[]):
-        super().__init__(pos, image, image_pos, image_size, sprite_group)
+    def __init__(self, pos=(0, 0), image='main_ui.png', image_pos=(0, 0), image_size=(0, 0), sprite_group=[], scale=1):
+        super().__init__(pos, image, image_pos, image_size, sprite_group, scale)
 
     def mouse_clicked(self):
         if pygame.mouse.get_pressed()[0] == 1:
