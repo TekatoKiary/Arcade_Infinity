@@ -46,35 +46,6 @@ class RoomCorridor:
         self.monster_group = pygame.sprite.Group()  # монстры в определенной комнате
         self.barrel_group = pygame.sprite.Group()
         self.spike_group = pygame.sprite.Group()
-        self.add_flags()
-
-    def add_flags(self):
-        """Метод класса. В одном слое находит флажки и рисует определённые объекты"""
-        # Зайдите в tiled editor map и посмотрите на комнаты в первом слое. Именно там отмечены флажки
-        # Так как это происходит в самом начале, не вижу делать здесь оптимизацию
-        for y in range(self.height):
-            for x in range(self.width):
-                if self.map.get_tile_image(x, y, 0):
-                    if self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 1376:
-                        sprites.Torch('torch_', self.x + self.tile_size * (x - 1),
-                                      self.y + self.tile_size * (y - 1) - self.tile_size // 2, True)
-                    elif self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 1441:
-                        self.torch_group.add(sprites.Torch('torch_', self.x + self.tile_size * (x - 1),
-                                                           self.y + self.tile_size * (y - 1) - self.tile_size // 2,
-                                                           False))
-                    elif self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 489:
-                        sprites.Torch('candleA_0', self.x + self.tile_size * (x - 1),
-                                      self.y + self.tile_size * (y - 1) - self.tile_size // 2, True)
-                    elif self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 553:
-                        self.torch_group.add(sprites.Torch('candleA_0', self.x + self.tile_size * (x - 1),
-                                                           self.y + self.tile_size * (y - 1) - self.tile_size // 2,
-                                                           False))
-                    elif self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 615:
-                        sprites.Torch('candleB_0', self.x + self.tile_size * (x - 1),
-                                      self.y + self.tile_size * (y - 1), True)
-                    elif self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 550:
-                        self.torch_group.add(sprites.Torch('candleB_0', self.x + self.tile_size * (x - 1),
-                                                           self.y + self.tile_size * (y - 1), False))
 
     def render(self, screen, x_speed, y_speed, player):
         """Метод класса. Рисует пол и стены, через которых нельзя пройти"""
@@ -210,32 +181,70 @@ class Room(RoomCorridor):
 
     def __init__(self, x, y, filename):
         super(Room, self).__init__(x, y, filename)
+        self.possible_pos = [(x, y) for x in range(2, 40) for y in range(5, 43)]
+        if self.filename_room not in ['room_with_chest', 'begin_room', 'end_room']:  # лишний раз не надо делать
+            self.create_possible_positions_for_monster()
+        self.add_flags()
         self.add_barrels_and_spike()
 
-    def add_monsters(self):
-        """Метод класса. Добавляет монстров в комнату"""
-        # Переделать полностью: будет долгий процесс следующих волн в комнате
-        if self.filename_room not in ['room_with_chest', 'begin_room', 'end_room']:
-            cnt_monsters = random.randrange(4, 9)  # экспериментально
-            cnt_error = 0
-            while cnt_monsters != 0:
-                monster = sprites.Monster(0, 0)
-                monster.rect.x = self.x + self.tile_size * random.randrange(3, self.width - 6)
-                monster.rect.y = self.y + self.tile_size * random.randrange(6, self.height - 6)
-                collide = [is_collide(monster, self.map.get_tile_image(x, y, 2), self.x + x * self.tile_size,
-                                      self.y + y * self.tile_size) if self.map.get_tile_image(x, y, 2) else False
-                           for y in range(self.height) for x in range(self.width)]  # коллизия между монстром и стеной
-                if pygame.sprite.spritecollideany(monster, self.barrel_group) or \
-                        pygame.sprite.spritecollideany(monster, sprites.torch_group) or any(collide):
-                    # Если есть коллизия, то заново создаем монстра
-                    monster.kill()
-                    cnt_error += 1
-                    if cnt_error == 250:  # я не знаю, избавлюсь от переполнения стека или нет(TecatoKiary)
-                        cnt_monsters -= 1
-                        cnt_error = 0
-                    continue
-                self.monster_group.add(monster)
-                cnt_monsters -= 1
+    def create_possible_positions_for_monster(self):
+        for x in range(self.width):
+            for y in range(self.height):
+                if self.map.get_tile_image(x, y, 2):
+                    if (x, y) in self.possible_pos:
+                        self.possible_pos.pop(self.possible_pos.index((x, y)))
+                    if (x - 1, y) in self.possible_pos:
+                        self.possible_pos.pop(self.possible_pos.index((x - 1, y)))
+                    if (x - 2, y) in self.possible_pos:
+                        self.possible_pos.pop(self.possible_pos.index((x - 2, y)))
+
+    def add_flags(self):
+        """Метод класса. В одном слое находит флажки и рисует определённые объекты"""
+        if 'corridor' in self.filename_room:
+            return
+        # Зайдите в tiled editor map и посмотрите на комнаты в первом слое. Именно там отмечены флажки
+        # Так как это происходит в самом начале, не вижу делать здесь оптимизацию
+        for y in range(self.height):
+            for x in range(self.width):
+                if self.map.get_tile_image(x, y, 0):
+                    if self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 1376:
+                        sprites.Torch('torch_', self.x + self.tile_size * (x - 1),
+                                      self.y + self.tile_size * (y - 1) - self.tile_size // 2, True)
+                        if (x, y) in self.possible_pos:
+                            self.possible_pos.pop(self.possible_pos.index((x, y)))
+                        if (x - 1, y) in self.possible_pos:
+                            self.possible_pos.pop(self.possible_pos.index((x - 1, y)))
+                        if (x - 2, y) in self.possible_pos:
+                            self.possible_pos.pop(self.possible_pos.index((x - 2, y)))
+                    elif self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 1441:
+                        self.torch_group.add(sprites.Torch('torch_', self.x + self.tile_size * (x - 1),
+                                                           self.y + self.tile_size * (y - 1) - self.tile_size // 2,
+                                                           False))
+                    elif self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 489:
+                        sprites.Torch('candleA_0', self.x + self.tile_size * (x - 1),
+                                      self.y + self.tile_size * (y - 1) - self.tile_size // 2, True)
+                        if (x, y) in self.possible_pos:
+                            self.possible_pos.pop(self.possible_pos.index((x, y)))
+                        if (x - 1, y) in self.possible_pos:
+                            self.possible_pos.pop(self.possible_pos.index((x - 1, y)))
+                        if (x - 2, y) in self.possible_pos:
+                            self.possible_pos.pop(self.possible_pos.index((x - 2, y)))
+                    elif self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 553:
+                        self.torch_group.add(sprites.Torch('candleA_0', self.x + self.tile_size * (x - 1),
+                                                           self.y + self.tile_size * (y - 1) - self.tile_size // 2,
+                                                           False))
+                    elif self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 615:
+                        sprites.Torch('candleB_0', self.x + self.tile_size * (x - 1),
+                                      self.y + self.tile_size * (y - 1), True)
+                        if (x, y) in self.possible_pos:
+                            self.possible_pos.pop(self.possible_pos.index((x, y)))
+                        if (x - 1, y) in self.possible_pos:
+                            self.possible_pos.pop(self.possible_pos.index((x - 1, y)))
+                        if (x - 2, y) in self.possible_pos:
+                            self.possible_pos.pop(self.possible_pos.index((x - 2, y)))
+                    elif self.map.tiledgidmap[self.map.get_tile_gid(x, y, 0)] == 550:
+                        self.torch_group.add(sprites.Torch('candleB_0', self.x + self.tile_size * (x - 1),
+                                                           self.y + self.tile_size * (y - 1), False))
 
     def add_barrels_and_spike(self):
         if self.filename_room not in ['room_with_chest', 'begin_room', 'end_room']:
@@ -254,11 +263,26 @@ class Room(RoomCorridor):
                         if map_surface.tiledgidmap[map_surface.get_tile_gid(x, y, 0)] % 2560 == 1261:
                             self.barrel_group.add(Barrel(self.x + (x - 1) * self.tile_size,
                                                          self.y + (y - 1) * self.tile_size))
+                            if (x, y) in self.possible_pos:  # В принципе там один и тот же размер
+                                self.possible_pos.pop(self.possible_pos.index((x, y)))
+                            if (x - 1, y) in self.possible_pos:
+                                self.possible_pos.pop(self.possible_pos.index((x - 1, y)))
+                            if (x - 2, y) in self.possible_pos:
+                                self.possible_pos.pop(self.possible_pos.index((x - 2, y)))
                         elif map_surface.tiledgidmap[map_surface.get_tile_gid(x, y, 0)] % 2560 == 1197:
                             self.spike_group.add(Spike(self.x + (x - 1) * self.tile_size,
                                                        self.y + (y - 1) * self.tile_size))
-                        else:
-                            print(map_surface.tiledgidmap[map_surface.get_tile_gid(x, y, 0)])
+
+    def add_monsters(self):
+        """Метод класса. Добавляет монстров в комнату"""
+        if self.filename_room not in ['room_with_chest', 'begin_room', 'end_room']:
+            cnt_monsters = random.randrange(4, 9)  # экспериментально
+            for i in range(cnt_monsters):
+                x, y = random.choice(self.possible_pos)
+                monster = sprites.Monster(0, 0)
+                monster.rect.x = self.x + self.tile_size * x
+                monster.rect.y = self.y + self.tile_size * y - monster.rect.height // 1.01
+                self.monster_group.add(monster)
 
     def render(self, screen, x_speed, y_speed, player):
         """Метод класса. Рисует пол и стены, через которых нельзя пройти + отрисовка других декораций"""
@@ -277,7 +301,8 @@ class Room(RoomCorridor):
                     x_speed, y_speed = self.blit_tiles(screen, wall, self.x, self.y, wall.width, wall.height, [0],
                                                        x_speed=x_speed, y_speed=y_speed,
                                                        player=player, layers_collide=0,
-                                                       functions=[is_collide_with_speed, self.is_render_picture_walls])
+                                                       functions=[is_collide_with_speed,
+                                                                  self.is_render_picture_walls])
                 continue
         # Отрисовка других декораций:
         self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(4, len(self.map.layers)))
@@ -319,7 +344,8 @@ class Room(RoomCorridor):
             # если правая стена:
             is_right = ((self.width - 2) * self.tile_size) if wall.filename.find('right') != -1 else 0
             x_speed, y_speed = self.blit_tiles(screen, wall, is_right + self.x, is_bottom + self.y, wall.width,
-                                               wall.height, range(len(wall.layers)), functions=[is_collide_with_speed],
+                                               wall.height, range(len(wall.layers)),
+                                               functions=[is_collide_with_speed],
                                                x_speed=x_speed, y_speed=y_speed, player=player, layers_collide=0)
 
         return x_speed, y_speed
@@ -415,7 +441,8 @@ class Room(RoomCorridor):
             for i in range(len(monsters) - 1, -1, -1):  # коллизия между монстрами и бочками
                 monster = monsters[i]
                 for barrel in self.barrel_group:
-                    monster.random_x, monster.random_y = barrel.is_collide(monster, monster.random_x, monster.random_y)
+                    monster.random_x, monster.random_y = barrel.is_collide(monster, monster.random_x,
+                                                                           monster.random_y)
                     if 0 == monster.random_x and monster.random_y == 0:
                         # если его скорость равна нулю, то дальше проверять коллизию его нет смысла
                         del monsters[i]
@@ -426,7 +453,8 @@ class Room(RoomCorridor):
             for i in range(len(monsters) - 1, -1, -1):  # коллизия между монстрами и свечами
                 monster = monsters[i]
                 for torch in sprites.torch_group:
-                    monster.random_x, monster.random_y = torch.is_collide(monster, monster.random_x, monster.random_y)
+                    monster.random_x, monster.random_y = torch.is_collide(monster, monster.random_x,
+                                                                          monster.random_y)
                     if 0 == monster.random_x and monster.random_y == 0:
                         # если его скорость равна нулю, то дальше проверять коллизию его нет смысла
                         del monsters[i]
@@ -435,7 +463,6 @@ class Room(RoomCorridor):
 
     def animation_spike(self):
         [i.increment_cnt() for i in self.spike_group]
-
 
 class Corridor(RoomCorridor):
     """Класс Room. Создаёт коридор
@@ -461,7 +488,8 @@ class Corridor(RoomCorridor):
             self.y + 16 <= others.HEIGHT // 2 <= self.y + self.height * self.tile_size - 16 else True
         x_speed, y_speed = super(Corridor, self).render(screen, x_speed, y_speed, player)
         if not is_stay_gates:
-            self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height, range(4, len(self.map.layers)))
+            self.blit_tiles(screen, self.map, self.x, self.y, self.width, self.height,
+                            range(4, len(self.map.layers)))
         return x_speed, y_speed
 
     def render_passing_walls(self, screen, player):

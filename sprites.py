@@ -93,7 +93,7 @@ class Monster(pygame.sprite.Sprite):
         self.rect.x = self.x = x
         self.rect.y = self.y = y
         image = pygame.transform.scale(self.image,
-                                       (self.image.get_rect().width,
+                                       (self.image.get_rect().width * 2,
                                         self.image.get_rect().height - self.rect.height // 1.01))
         self.mask = pygame.mask.from_surface(image)  # маска нужна для коллизии с бочками
         # Зачем нужен новый image с изменёнными параметрами: в маске будет храниться изображение, можно сказать, ног
@@ -307,6 +307,7 @@ class Gate:
 
             if t:
                 self._increment_step(is_stay_gates)
+                return
 
     def _increment_step(self, is_stay_gates):
         """Метод класса. Увеличивает self.cnt для анимации спрайта"""
