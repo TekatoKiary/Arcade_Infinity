@@ -3,13 +3,152 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "ready_map/end_room.tmx",
+    "activeFile": "barrels_and_spike/map0/mainlevbuild.tsx",
     "expandedProjectPaths": [
+        "barrels_and_spike/map2",
+        "barrels_and_spike",
+        ".",
         "ready_map",
-        "."
+        "barrels_and_spike/map1",
+        "barrels_and_spike/map0",
+        "barrels_and_spike/map3"
     ],
     "file.lastUsedOpenFilter": "Все файлы (*)",
     "fileStates": {
+        "": {
+            "scaleInDock": 1
+        },
+        "barrels_and_spike/map0/decorative.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1
+        },
+        "barrels_and_spike/map0/mainlevbuild.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "barrels_and_spike/map0/map0.tmx": {
+            "scale": 0.75,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 357.33333333333326,
+                "y": 159.33333333333331
+            }
+        },
+        "barrels_and_spike/map0/variant0.tmx": {
+            "scale": 0.75,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 250,
+                "y": 353.99999999999994
+            }
+        },
+        "barrels_and_spike/map0/variant0.tmx#mainlevbuild": {
+            "scaleInDock": 1
+        },
+        "barrels_and_spike/map0/variant1.tmx": {
+            "scale": 0.8002130681818181,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 354.280642584539,
+                "y": 354.28064258453895
+            }
+        },
+        "barrels_and_spike/map1/decorative.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1
+        },
+        "barrels_and_spike/map1/mainlevbuild.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "barrels_and_spike/map1/variant0.tmx": {
+            "scale": 0.75,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 433.99999999999994,
+                "y": 361.99999999999994
+            }
+        },
+        "barrels_and_spike/map1/variant00.tmx": {
+            "scale": 0.75,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 419.33333333333326,
+                "y": 279.33333333333337
+            }
+        },
+        "barrels_and_spike/map1/variant1.tmx": {
+            "scale": 0.8002130681818181,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 272.42744297505993,
+                "y": 354.28064258453895
+            }
+        },
+        "barrels_and_spike/map2/mainlevbuild.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "barrels_and_spike/map2/map2.tmx": {
+            "scale": 0.8002130681818181,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 132.46471997869887,
+                "y": 353.0309754149286
+            }
+        },
+        "barrels_and_spike/map2/variant0.tmx": {
+            "scale": 0.8002130681818181,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 473.62385728232897,
+                "y": 354.28064258453895
+            }
+        },
+        "barrels_and_spike/map2/variant1.tmx": {
+            "scale": 0.6625710227272726,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 352.4150498445708,
+                "y": 352.4150498445708
+            }
+        },
+        "barrels_and_spike/map3/mainlevbuild.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "barrels_and_spike/map3/map3.tmx": {
+            "scale": 0.8002130681818181,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 353.6558089997338,
+                "y": 354.28064258453895
+            }
+        },
+        "barrels_and_spike/map3/variant0.tmx": {
+            "scale": 0.7880681818181818,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 378.139870223504,
+                "y": 341.9754866618601
+            }
+        },
+        "barrels_and_spike/map5/decorative.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1
+        },
+        "barrels_and_spike/map5/mainlevbuild.tsx": {
+            "scaleInDock": 1
+        },
+        "barrels_and_spike/map5/variant0.tmx": {
+            "scale": 0.75,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 110.66666666666664,
+                "y": 337.99999999999994
+            }
+        },
         "base_map_with_gates.tmx": {
             "scale": 0.81826171875,
             "selectedLayer": 0,
@@ -18,25 +157,52 @@
                 "y": 265.80737558181164
             }
         },
+        "begin_room.tmx": {
+            "scale": 0.8002130681818181,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 354.280642584539,
+                "y": 354.28064258453895
+            }
+        },
+        "decorative.tsx": {
+            "scaleInDock": 1
+        },
+        "end_room.tmx": {
+            "scale": 0.8002130681818181,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 353.0309754149286,
+                "y": 353.0309754149286
+            }
+        },
         "mainlevbuild.tsx": {
             "dynamicWrapping": false,
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
-        "map1.tmx": {
-            "scale": 1.5,
-            "selectedLayer": 1,
+        "map0.tmx": {
+            "scale": 0.7421875,
+            "selectedLayer": 0,
             "viewCenter": {
-                "x": 257.66666666666663,
-                "y": 133.66666666666669
+                "x": 351.6631578947368,
+                "y": 353.6842105263158
+            }
+        },
+        "map1.tmx": {
+            "scale": 1,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 359.5,
+                "y": 468.5
             }
         },
         "map2.tmx": {
-            "scale": 1.10029296875,
+            "scale": 0.5,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 280.37987041803495,
-                "y": -74.07118132599629
+                "x": 453,
+                "y": 175
             }
         },
         "map3.tmx": {
@@ -44,7 +210,31 @@
             "selectedLayer": 1,
             "viewCenter": {
                 "x": 279.3333333333333,
-                "y": 126
+                "y": 349.99999999999994
+            }
+        },
+        "map4.tmx": {
+            "scale": 0.8002130681818181,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 463.626519925446,
+                "y": 308.0429573089554
+            }
+        },
+        "map5.tmx": {
+            "scale": 0.8002130681818181,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 163.706399218958,
+                "y": 353.0309754149286
+            }
+        },
+        "picture_wall3.tmx": {
+            "scale": 10.91015625,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 32.03437164339421,
+                "y": 24.060150375939855
             }
         },
         "ready_map/base_map_with_gates.tmx": {
@@ -287,36 +477,40 @@
             }
         }
     },
-    "last.externalTilesetPath": "C:/Users/1/PycharmProjects/Arcade_Infinity/map/ready_map",
+    "last.externalTilesetPath": "C:/Users/1/PycharmProjects/Arcade_Infinity/map",
     "last.imagePath": "C:/Users/1/PycharmProjects/Arcade_Infinity/map/ready_map",
-    "map.height": 3,
+    "map.height": 44,
     "map.lastUsedFormat": "tmx",
     "map.layerDataFormat": null,
     "map.tileHeight": 16,
     "map.tileWidth": 16,
-    "map.width": 8,
+    "map.width": 44,
     "mapScene.enableWorlds": true,
     "openFiles": [
-        "ready_map/mainlevbuild.tsx",
-        "ready_map/map2.tmx",
-        "ready_map/map3.tmx",
-        "ready_map/end_room.tmx"
+        "mainlevbuild.tsx",
+        "barrels_and_spike/map1/variant0.tmx",
+        "barrels_and_spike/map2/variant0.tmx",
+        "map2.tmx",
+        "barrels_and_spike/map3/variant0.tmx",
+        "barrels_and_spike/map0/variant0.tmx",
+        "barrels_and_spike/map0/mainlevbuild.tsx"
     ],
     "project": "map.tiled-project",
     "recentFiles": [
-        "ready_map/mainlevbuild.tsx",
-        "ready_map/map2.tmx",
-        "ready_map/map3.tmx",
-        "ready_map/end_room.tmx",
-        "ready_map/vertical_gate.tmx",
-        "ready_map/top_wall.tmx",
-        "ready_map/room_with_chest.tmx",
-        "ready_map/right_wall.tmx",
-        "ready_map/map1.tmx",
-        "ready_map/left_wall.tmx",
-        "ready_map/bottom_wall.tmx",
-        "ready_map/begin_room.tmx"
+        "barrels_and_spike/map5/variant0.tmx",
+        "map0.tmx",
+        "map4.tmx",
+        "map2.tmx",
+        "barrels_and_spike/map2/variant1.tmx",
+        "map1.tmx",
+        "barrels_and_spike/map1/variant0.tmx",
+        "barrels_and_spike/map1/variant1.tmx",
+        "barrels_and_spike/map3/variant0.tmx",
+        "barrels_and_spike/map3/map3.tmx",
+        "barrels_and_spike/map2/map2.tmx",
+        "barrels_and_spike/map0/variant1.tmx"
     ],
+    "tileset.lastUsedFilter": "Файлы набора тайлов Tiled (*.tsx *.xml)",
     "tileset.lastUsedFormat": "tsx",
     "tileset.spacing": 0,
     "tileset.tileSize": {

@@ -1,10 +1,11 @@
 import pygame
 import random
 import others
-from others import collide_rect, FPS, barrels_coords
+from others import collide_rect, FPS, BAR_SPIKE_MAP_DIR
 from room import Room, Corridor
-from sprites import Player, Barrel, Spike, torch_group, spike_group
+from sprites import Player, torch_group
 import time
+import os
 
 
 # Главные цели:
@@ -47,7 +48,6 @@ class Labyrinth:
         x, y = random.randrange(4), random.randrange(4)
         room = Room(x, y, f'begin_room')
         coords_all_room.append((x, y))
-        Spike(room.x + room.tile_size * 5, room.y + room.tile_size * 30)
 
         x_move = room.x + (-others.WIDTH + room.tile_size * room.width) // 2
         y_move = room.y + (-others.HEIGHT + room.tile_size * room.height) // 2
@@ -66,12 +66,8 @@ class Labyrinth:
                         self.corridors.append(Corridor(x, min(y, y + ky), 'vertical'))
                         coords_ver_cor.append((x, min(y, y + ky)))
                     x, y = x + kx, y + ky
-                    room = Room(x, y, f'map{random.randrange(1, 4)}') \
+                    room = Room(x, y, f'map{random.randrange(len(os.listdir(BAR_SPIKE_MAP_DIR)))}') \
                         if i < 2 else Room(x, y, f'end_room')
-                    if barrels_coords.get(room.filename_room):
-                        random_coords = random.choice(barrels_coords[room.filename_room])
-                        [room.barrel_group.add(Barrel(room.x + room.tile_size * i[0], room.y + room.tile_size * i[1]))
-                         for i in random_coords]
                     room.add_monsters()
                     self.map_list[y][x] = room
                     self.rooms.append(room)
@@ -87,12 +83,7 @@ class Labyrinth:
                             and self.rooms[0] != self.map_list[y + ky][x + kx] and \
                             self.rooms[3] != self.map_list[y + ky][x + kx]:
                         room = Room(x, y,
-                                    f'map{random.randrange(1, 4)}' if chest_room != count_room else 'room_with_chest')
-                        if barrels_coords.get(room.filename_room):
-                            random_coords = random.choice(barrels_coords[room.filename_room])
-                            [room.barrel_group.add(
-                                Barrel(room.x + room.tile_size * i[0], room.y + room.tile_size * i[1]))
-                                for i in random_coords]
+                                    f'map{random.randrange(len(os.listdir(BAR_SPIKE_MAP_DIR)))}' if chest_room != count_room else 'room_with_chest')
                         room.add_monsters()
                         self.map_list[y][x] = room
                         self.rooms.append(room)
@@ -120,26 +111,23 @@ class Labyrinth:
         [i.move(x_move, y_move) for i in self.rooms]
         [i.move(x_move, y_move) for i in self.corridors]
         [i.move(x_move, y_move) for i in torch_group]
-        [i.move(x_move, y_move) for i in spike_group]
 
     def update(self, screen):
         start_time = time.time()
         x, y = move()
         player.move(x, y)
-
         x, y = self.render(x, y)
 
-        spike_group.draw(screen)
         player.draw(screen)
         [i.draw(screen) for i in torch_group]
 
         x, y = self.render_passing_walls(x, y)
 
-        x, y = self.collision_with_walls_or_torches(x, y)
+        x, y = self.collision_with_torches(x, y)
 
         if x or y:
             self.move_objects(x, y)
-        print("--- %s seconds ---" % (time.time() - start_time))
+        # print("--- %s seconds ---" % (time.time() - start_time))
 
     def render(self, x, y):
         for room in self.rooms:
@@ -168,7 +156,7 @@ class Labyrinth:
                 corridor.render_passing_walls(screen, player)
         return x, y
 
-    def collision_with_walls_or_torches(self, x, y):
+    def collision_with_torches(self, x, y):
         for i in torch_group:
             if not any([x, y]):
                 break
@@ -179,7 +167,6 @@ class Labyrinth:
         [i.move(x, y) for i in self.rooms]
         [i.move(x, y) for i in self.corridors]
         [i.move(x, y) for i in torch_group]
-        [i.move(x, y) for i in spike_group]
 
 
 def move():

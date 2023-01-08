@@ -10,7 +10,6 @@ import pytmx
 
 
 torch_group = pygame.sprite.Group()  # группа свечей
-spike_group = pygame.sprite.Group()  # группа шипов
 
 
 class Player(pygame.sprite.Sprite):
@@ -23,9 +22,10 @@ class Player(pygame.sprite.Sprite):
                                          -1)  # Изначальное изображение. Нужен для коллизии
         self.image = pygame.transform.scale(self.image,
                                             (30, self.image.get_rect().height * 2.3))
-        self.images_stand = [pygame.transform.scale(load_image_textures(f'Adventurer\\adventurer_stand_prob_{i}.png', -1),
-                                                    (30, self.image.get_rect().height))
-                             for i in range(13)]  # спрайты игрока, когда он стоит
+        self.images_stand = [
+            pygame.transform.scale(load_image_textures(f'Adventurer\\adventurer_stand_prob_{i}.png', -1),
+                                   (30, self.image.get_rect().height))
+            for i in range(13)]  # спрайты игрока, когда он стоит
         self.images_move = [pygame.transform.scale(load_image_textures(f'Adventurer\\adventurer_move_prob_{i}.png', -1),
                                                    (30, self.image.get_rect().height))
                             for i in range(8)]  # спрайты игрока, когда он двигается
@@ -152,6 +152,7 @@ class Monster(pygame.sprite.Sprite):
 class Barrel(pygame.sprite.Sprite):
     """Класс Barrel. Создается бочка"""
 
+    # id - 1260
     def __init__(self, x, y):
         super(Barrel, self).__init__()
         self.image = load_image_textures('cub.png', -1)
@@ -333,21 +334,23 @@ class Gate:
 class Spike(pygame.sprite.Sprite):
     """Класс Gate. Создаются шипы"""
 
+    # id - 1196
     def __init__(self, x, y):
-        super(Spike, self).__init__(spike_group)
+        super(Spike, self).__init__()
         self.images = [pygame.transform.scale(load_image_textures(f'Catacombs\\spike_{i}.png', -1),
                                               (32, 32))
                        for i in range(5)]
         self.images.extend([pygame.transform.scale(load_image_textures(f'Catacombs\\spike_{i}.png', -1),
                                                    (32, 32))
-                            for i in range(4, 0, -1)])
-        self.image = self.images[0] # изображение нужное для коллизии
+                            for i in range(4, -1, -1)])
+        self.image = self.images[0]  # изображение нужное для коллизии
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
         self.cnt = 0  # счетчик для изменения спрайтов
         self.step = 10  # именно настолько увеличивается self.cnt
         self.mask = pygame.mask.from_surface(self.image)
+        self.delay = 0
 
     def draw(self, screen):
         """Метод класса. Отрисовка шипов"""
@@ -357,10 +360,12 @@ class Spike(pygame.sprite.Sprite):
         """Метод класса. Движение шипов"""
         self.rect.x -= x
         self.rect.y -= y
-        self._increment_cnt()
 
-    def _increment_cnt(self):
+    def increment_cnt(self):
         """Метод класса. Увеличивает self.cnt для анимации спрайта"""
+        if self.delay:
+            self.delay -= 1
+            return
         try:
             self.image = self.images[self.cnt // self.step]
         except IndexError:
@@ -368,7 +373,13 @@ class Spike(pygame.sprite.Sprite):
         self.cnt += 1
         if self.cnt >= self.step * (len(self.images) - 1):
             self.cnt = 0
+            self.image = self.images[0]
+            self.delay = 60
 
     def is_collide(self, player, x_speed, y_speed):
         # пока в разработке
         pass
+
+
+class Heal(pygame.sprite.Sprite):
+    pass
