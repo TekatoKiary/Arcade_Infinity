@@ -171,6 +171,12 @@ class RoomCorridor:
             i.is_collide()
         return x_speed, y_speed
 
+    def clear(self):
+        [i.kill() for i in self.torch_group]
+        [i.kill() for i in self.spike_group]
+        [i.kill() for i in self.monster_group]
+        [i.kill() for i in self.barrel_group]
+
 
 class Room(RoomCorridor):
     """Класс Room. Создаёт комнату
@@ -463,6 +469,18 @@ class Room(RoomCorridor):
 
     def animation_spike(self):
         [i.increment_cnt() for i in self.spike_group]
+
+    def enter_next_level(self, player):
+        if self.filename_room == 'end_room':  # на всякий случай защита от других комнат
+            for x in range(17, 27):
+                for y in range(20, 23):
+                    cell = pygame.sprite.Sprite()
+                    cell.rect = pygame.Rect(self.x + x * self.tile_size, self.y + y * self.tile_size,
+                                            self.tile_size, self.tile_size)
+                    if pygame.sprite.collide_rect(player, cell):
+                        return True
+        return False
+
 
 class Corridor(RoomCorridor):
     """Класс Room. Создаёт коридор

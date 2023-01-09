@@ -1,5 +1,4 @@
 import os
-import sys
 import pygame
 
 # Функции и костанты
@@ -13,20 +12,13 @@ FPS = 60
 PICTURE_WAllS = [TILED_MAP_DIR + f'\\picture_wall\\picture_wall{i}.tmx' for i in range(1, 9)]  # Рисунки на стене
 
 
-def load_image_textures(name, colorkey=None):
-    fullname = os.path.join('textures', name)
-    if not os.path.isfile(fullname):
-        print(f"Файл с изображением '{fullname}' не найден")
-        sys.exit()
-    image = pygame.image.load(fullname)
-
-    if colorkey is not None:
-        image = image.convert()
-        if colorkey == -1:
-            colorkey = image.get_at((0, 0))
-        image.set_colorkey(colorkey)
-    else:
-        image = image.convert_alpha()
+def load_image(name, path='ui'):
+    fullname = os.path.join(path, name)
+    try:
+        image = pygame.image.load(fullname).convert_alpha()
+    except pygame.error as message:
+        print('Cannot load image:', name)
+        raise SystemExit(message)
     return image
 
 

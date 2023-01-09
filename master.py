@@ -1,18 +1,24 @@
 import pygame
 import random
-import others
-from others import collide_rect, FPS, BAR_SPIKE_MAP_DIR
-from room import Room, Corridor
-from sprites import Player, torch_group
 import time
 import os
+import others
+
+pygame.init()  # инициализируем заранее чтобы не было проблем в sprites.py
+pygame.display.set_caption('Arcade Infinity')
+screen = pygame.display.set_mode(others.SIZE)
+
+
+# others.SIZE = others.WIDTH, others.HEIGHT = pygame.display.Info().current_w, pygame.display.Info().current_h
+# pygame.FULLSCREEN | pygame.DOUBLEBUF
 
 
 # Главные цели:
 # Сделать еще оптимизации
+# class Heal
 # Второстепенные цели:
-# Добавить еще карты
-# Добавить еще вариации расстановок бочек, а вместе с ними и шипы
+# Добавить еще карты(это можно до бесконечности)
+# Добавить еще вариации расстановок бочек, а вместе с ними и шипы(это можно до бесконечности)
 
 # Шипы отображаются только в начале, так как в скором времени поменяется способ расстановки бочек и шипов
 
@@ -28,15 +34,14 @@ import os
 
 class Labyrinth:
     def __init__(self):
-
-        self.map_list = list([0] * 4 for _ in range(4))
-
         self.rooms = []
         self.corridors = []
         self.create_rooms()
         print(*self.map_list, sep='\n')
 
     def create_rooms(self):
+        loading()
+        self.map_list = list([0] * 4 for _ in range(4))
         count_room = random.randrange(1, 4)
         # кол-во доп комнат в уровне,
         # то есть без учета первой комнаты, комнаты с врагами(их 2) и последней комнаты
@@ -83,7 +88,8 @@ class Labyrinth:
                             and self.rooms[0] != self.map_list[y + ky][x + kx] and \
                             self.rooms[3] != self.map_list[y + ky][x + kx]:
                         room = Room(x, y,
-                                    f'map{random.randrange(len(os.listdir(BAR_SPIKE_MAP_DIR)))}' if chest_room != count_room else 'room_with_chest')
+                                    f'map{random.randrange(len(os.listdir(BAR_SPIKE_MAP_DIR)))}'
+                                    if chest_room != count_room else 'room_with_chest')
                         room.add_monsters()
                         self.map_list[y][x] = room
                         self.rooms.append(room)
@@ -168,6 +174,27 @@ class Labyrinth:
         [i.move(x, y) for i in self.corridors]
         [i.move(x, y) for i in torch_group]
 
+    def enter_next_level(self):
+        room = self.rooms[3]
+        if collide_rect(0, 0, others.WIDTH, others.HEIGHT,
+                        room.x, room.y, room.x + room.width * room.tile_size,
+                        room.y + room.height * room.tile_size) and room.enter_next_level(player):
+            [i.clear() for i in self.rooms]
+            self.rooms.clear()
+            self.corridors.clear()
+            [i.kill() for i in sprites.torch_group]
+            [i.kill() for i in sprites.heal_group]
+            self.create_rooms()
+
+
+def loading():
+    image = load_image('main_menu_bg2.png')
+    image = pygame.transform.scale(image, (others.WIDTH, others.HEIGHT))
+    screen.blit(image, (0, 0))
+    font = pygame.font.Font('ui/MinimalPixel v2.ttf', 30).render('loading...', True, (255, 255, 255))
+    screen.blit(font, (others.WIDTH - font.get_width() - 20, others.HEIGHT - font.get_height() - 20))
+    pygame.display.update()
+
 
 def move():
     key = pygame.key.get_pressed()
@@ -184,11 +211,11 @@ def move():
 
 
 if __name__ == '__main__':
-    pygame.init()
-    pygame.display.set_caption('Game')
-    screen = pygame.display.set_mode(others.SIZE)
-    # others.SIZE = others.WIDTH, others.HEIGHT = pygame.display.Info().current_w, pygame.display.Info().current_h
-    # pygame.FULLSCREEN | pygame.DOUBLEBUF
+    import sprites
+    from others import collide_rect, FPS, BAR_SPIKE_MAP_DIR, load_image
+    from room import Room, Corridor
+    from sprites import Player, torch_group, heal_group
+
     clock = pygame.time.Clock()
 
     running = 1
@@ -200,6 +227,12 @@ if __name__ == '__main__':
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_e:
+                    if pygame.sprite.spritecollide(player, heal_group, True):
+                        pass  # персонаж увеличивает здоровье
+                    else:
+                        lab.enter_next_level()
         screen.fill((0, 0, 0))
         lab.update(screen)
         pygame.display.update()

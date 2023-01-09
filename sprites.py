@@ -1,8 +1,10 @@
 import random
 import pygame
 import others
-from others import load_image_textures, is_collide_with_speed, TILED_MAP_DIR
+from others import is_collide_with_speed, TILED_MAP_DIR
 import pytmx
+import os
+import sys
 
 # В чем смысл id: в tiled комнаты есть отдельный слой, где как раз хранятся особенные плитки - флажки.
 # Так как это плитка, следовательно, у неё есть id.
@@ -10,25 +12,41 @@ import pytmx
 
 
 torch_group = pygame.sprite.Group()  # группа свечей
+heal_group = pygame.sprite.Group()
+
+
+def load_image_textures(name, colorkey=None):
+    fullname = os.path.join('textures', name)
+    if not os.path.isfile(fullname):
+        print(f"Файл с изображением '{fullname}' не найден")
+        sys.exit()
+    image = pygame.image.load(fullname)
+
+    if colorkey is not None:
+        image = image.convert()
+        if colorkey == -1:
+            colorkey = image.get_at((0, 0))
+        image.set_colorkey(colorkey)
+    else:
+        image = image.convert_alpha()
+    return image
 
 
 class Player(pygame.sprite.Sprite):
-    """Класс Player. Создается игрок"""
+    """Класс Player. Создается игрок"""  # Я больше ничего не мог придумать, чтобы объяснить, что такое Player
+    image = load_image_textures('Adventurer\\adventurer_stand_prob_0.png',
+                                -1)  # Изначальное изображение. Нужен для коллизии
+    image = pygame.transform.scale(load_image_textures('Adventurer\\adventurer_stand_prob_0.png',
+                                                       -1), (30, image.get_rect().height * 2.3))
+    images_stand = [load_image_textures(f'Adventurer\\adventurer_stand_prob_{i}.png', -1)
+                    for i in range(13)]  # спрайты игрока, когда он стоит
+    images_move = [load_image_textures(f'Adventurer\\adventurer_move_prob_{i}.png', -1)
+                   for i in range(8)]  # спрайты игрока, когда он двигается
 
-    # Я больше ничего не мог придумать, чтобы объяснить, что такое Player
     def __init__(self):
         super(Player, self).__init__()
-        self.image = load_image_textures('Adventurer\\adventurer_stand_prob_0.png',
-                                         -1)  # Изначальное изображение. Нужен для коллизии
-        self.image = pygame.transform.scale(self.image,
-                                            (30, self.image.get_rect().height * 2.3))
-        self.images_stand = [
-            pygame.transform.scale(load_image_textures(f'Adventurer\\adventurer_stand_prob_{i}.png', -1),
-                                   (30, self.image.get_rect().height))
-            for i in range(13)]  # спрайты игрока, когда он стоит
-        self.images_move = [pygame.transform.scale(load_image_textures(f'Adventurer\\adventurer_move_prob_{i}.png', -1),
-                                                   (30, self.image.get_rect().height))
-                            for i in range(8)]  # спрайты игрока, когда он двигается
+        self.images_stand = [pygame.transform.scale(i, (30, self.image.get_height())) for i in self.images_stand]
+        self.images_move = [pygame.transform.scale(i, (30, self.image.get_height())) for i in self.images_move]
         self.rect = self.image.get_rect()
         self.rect.x = self.x = others.WIDTH // 2
         self.rect.y = self.y = others.HEIGHT // 2
@@ -82,13 +100,12 @@ class Player(pygame.sprite.Sprite):
 
 class Monster(pygame.sprite.Sprite):
     """Класс Monster. Создается монстра"""
+    image = load_image_textures('Monsters\\monster.png', -1)  # Изначальное изображение. Нужен для коллизии
+    image = pygame.transform.scale(image, (image.get_rect().width * 2, image.get_rect().height * 2.3))
 
     def __init__(self, x, y):
         super(Monster, self).__init__()
-        self.image = load_image_textures('Monsters\\monster.png', -1)  # Изначальное изображение. Нужен для коллизии
-        self.image = pygame.transform.scale(self.image,
-                                            (self.image.get_rect().width * 2,
-                                             self.image.get_rect().height * 2.3))
+
         self.rect = self.image.get_rect()
         self.rect.x = self.x = x
         self.rect.y = self.y = y
@@ -151,12 +168,11 @@ class Monster(pygame.sprite.Sprite):
 
 class Barrel(pygame.sprite.Sprite):
     """Класс Barrel. Создается бочка"""
+    image = pygame.transform.scale(load_image_textures('cub.png', -1), (28, 32))
 
     # id - 1260
     def __init__(self, x, y):
         super(Barrel, self).__init__()
-        self.image = load_image_textures('cub.png', -1)
-        self.image = pygame.transform.scale(self.image, (28, 32))
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -209,7 +225,7 @@ class Torch(pygame.sprite.Sprite):
             # Иначе попадает группу, которая находится в классе комнаты
         self.images = [pygame.transform.scale(load_image_textures(f'Catacombs\\{filename}{i}.png', -1),
                                               (32 if filename != 'candleA_0' else 16, 32))
-                       for i in range(1, 5)]
+                       for i in range(1, 5)] # мешает filename для того, чтобы он был создан снаружи init
         self.image = self.images[0]
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -334,16 +350,13 @@ class Gate:
 
 class Spike(pygame.sprite.Sprite):
     """Класс Gate. Создаются шипы"""
+    images = [pygame.transform.scale(load_image_textures(f'Catacombs\\spike_{i}.png', -1), (32, 32)) for i in range(5)]
+    images.extend([pygame.transform.scale(load_image_textures(f'Catacombs\\spike_{i}.png', -1), (32, 32))
+                   for i in range(4, -1, -1)])
 
     # id - 1196
     def __init__(self, x, y):
         super(Spike, self).__init__()
-        self.images = [pygame.transform.scale(load_image_textures(f'Catacombs\\spike_{i}.png', -1),
-                                              (32, 32))
-                       for i in range(5)]
-        self.images.extend([pygame.transform.scale(load_image_textures(f'Catacombs\\spike_{i}.png', -1),
-                                                   (32, 32))
-                            for i in range(4, -1, -1)])
         self.image = self.images[0]  # изображение нужное для коллизии
         self.rect = self.image.get_rect()
         self.rect.x = x
