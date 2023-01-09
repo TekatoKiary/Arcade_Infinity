@@ -168,7 +168,7 @@ class Monster(pygame.sprite.Sprite):
 
 class Barrel(pygame.sprite.Sprite):
     """Класс Barrel. Создается бочка"""
-    image = pygame.transform.scale(load_image_textures('cub.png', -1), (28, 32))
+    image = pygame.transform.scale(load_image_textures('barrel.png', -1), (28, 32))
 
     # id - 1260
     def __init__(self, x, y):
@@ -225,7 +225,7 @@ class Torch(pygame.sprite.Sprite):
             # Иначе попадает группу, которая находится в классе комнаты
         self.images = [pygame.transform.scale(load_image_textures(f'Catacombs\\{filename}{i}.png', -1),
                                               (32 if filename != 'candleA_0' else 16, 32))
-                       for i in range(1, 5)] # мешает filename для того, чтобы он был создан снаружи init
+                       for i in range(1, 5)]  # мешает filename для того, чтобы он был создан снаружи init
         self.image = self.images[0]
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -396,4 +396,20 @@ class Spike(pygame.sprite.Sprite):
 
 
 class Heal(pygame.sprite.Sprite):
-    pass
+    image = pygame.transform.scale(load_image_textures('heal.png', -1), (28, 32))
+
+    def __init__(self, x, y):
+        super(Heal, self).__init__(heal_group)
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+    def move(self, x, y):
+        """Метод класса. Движение бутылки исцеления"""
+        self.rect.x -= x
+        self.rect.y -= y
+
+    def heal(self):
+        print('heal')
+        # сперва лечит игрока
+        self.kill()

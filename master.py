@@ -54,6 +54,7 @@ class Labyrinth:
         room = Room(x, y, f'begin_room')
         coords_all_room.append((x, y))
 
+        Heal(room.x + 5 * room.tile_size, room.y + 5 * room.tile_size)
         x_move = room.x + (-others.WIDTH + room.tile_size * room.width) // 2
         y_move = room.y + (-others.HEIGHT + room.tile_size * room.height) // 2
 
@@ -117,13 +118,14 @@ class Labyrinth:
         [i.move(x_move, y_move) for i in self.rooms]
         [i.move(x_move, y_move) for i in self.corridors]
         [i.move(x_move, y_move) for i in torch_group]
+        [i.move(x_move, y_move) for i in heal_group]
 
     def update(self, screen):
         start_time = time.time()
         x, y = move()
         player.move(x, y)
         x, y = self.render(x, y)
-
+        heal_group.draw(screen)
         player.draw(screen)
         [i.draw(screen) for i in torch_group]
 
@@ -173,6 +175,7 @@ class Labyrinth:
         [i.move(x, y) for i in self.rooms]
         [i.move(x, y) for i in self.corridors]
         [i.move(x, y) for i in torch_group]
+        [i.move(x, y) for i in heal_group]
 
     def enter_next_level(self):
         room = self.rooms[3]
@@ -214,7 +217,7 @@ if __name__ == '__main__':
     import sprites
     from others import collide_rect, FPS, BAR_SPIKE_MAP_DIR, load_image
     from room import Room, Corridor
-    from sprites import Player, torch_group, heal_group
+    from sprites import Player, torch_group, heal_group, Heal
 
     clock = pygame.time.Clock()
 
@@ -229,10 +232,11 @@ if __name__ == '__main__':
                 running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_e:
-                    if pygame.sprite.spritecollide(player, heal_group, True):
-                        pass  # персонаж увеличивает здоровье
-                    else:
-                        lab.enter_next_level()
+                    heal = pygame.sprite.spritecollide(player, heal_group,False)
+                    if heal:
+                        heal[0].heal()  # персонаж увеличивает здоровье
+                if event.key == pygame.K_KP_ENTER or event.key == pygame.K_RETURN:
+                    lab.enter_next_level()
         screen.fill((0, 0, 0))
         lab.update(screen)
         pygame.display.update()
