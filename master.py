@@ -66,9 +66,6 @@ if __name__ == '__main__':
     shop_button = ui.Buttons(pos=(720, 20), sprite_group=(sprites.all_sprites, sprites.ui_sprites), image_pos=(138, 52), image_size=(65, 28))
     player_balance = ui.Text(pos=(90, 50), sprite_group=sprites.all_sprites)
     player_ammo = ui.Text(pos=(720, 460), sprite_group=sprites.all_sprites)
-    info1 = ui.Text(pos=(30, 400), sprite_group=sprites.all_sprites, text='press W, A, S, D to move', size=14)
-    info2 = ui.Text(pos=(30, 430), sprite_group=sprites.all_sprites, text='press F to take the gun', size=14)
-    info2 = ui.Text(pos=(30, 460), sprite_group=sprites.all_sprites, text='press G to drop the gun', size=14)
 
     # Shop
     shop = ui.Shop(player=pl, pos=(590, 60), image_pos=(0, 84), image_size=(210, 312), sprite_group=(sprites.ui_sprites, sprites.all_sprites))
@@ -115,15 +112,28 @@ if __name__ == '__main__':
         if bool:
             game_started = True
             for sprite in main_menu_group:
-                sprite.add(sprites.all_sprites)
+                sprite.kill()
+                sprite.add(main_menu_group)
         else:
             game_started = False
-            for sprite in main_menu_group:
-                sprites.all_sprites.remove(sprite)
+
+    
+    def set_loading_menu_opened(bool):
+        global loading_menu_opened
+        if bool:
+            loading_menu_opened = True
+            for sprite in loading_menu_sprites:
+                sprite.add(main_menu_group)
+        else:
+            loading_menu_opened = False
+            for sprite in loading_menu_sprites:
+                main_menu_group.remove(sprite)
 
     pause_group = pygame.sprite.Group()
     main_menu_group = pygame.sprite.Group()
+    loading_menu_sprites = pygame.sprite.Group()
 
+    # Pause
     pause_button = ui.Buttons((390, 10), image_pos=(320, 44), image_size=(36, 36), sprite_group=(sprites.all_sprites, sprites.ui_sprites))
 
     black_bg = pygame.sprite.Sprite(pause_group)
@@ -135,14 +145,31 @@ if __name__ == '__main__':
     buttons_bg = ui.Img(pos=(280, 80), image_pos=(0, 400), image_size=(152, 132), sprite_group=(pause_group), scale=1.5)
     resume_button = ui.Buttons(pos=(345, 130), image_pos=(214, 216), image_size=(65, 28), sprite_group=(pause_group), scale=1.5)
     exit_button_on_pause = ui.Buttons(pos=(345, 180), image_pos=(214, 248), image_size=(65, 28), sprite_group=(pause_group), scale=1.5)
+    info1 = ui.Text(pos=(30, 340), sprite_group=pause_group, text='press W, A, S, D to move', size=14)
+    info2 = ui.Text(pos=(30, 370), sprite_group=pause_group, text='press F to take the gun', size=14)
+    info3 = ui.Text(pos=(30, 400), sprite_group=pause_group, text='press G to drop the gun', size=14)
+    info4 = ui.Text(pos=(30, 430), sprite_group=pause_group, text='press E to take the heal', size=14)
+    info5 = ui.Text(pos=(30, 460), sprite_group=pause_group, text='press Enter to the next level', size=14)
 
+    # Main menu
     main_menu_bg = ui.Img(pos=(0, 0), image='main_menu_bg2.png', image_pos=(0, 0), image_size=(800, 500), sprite_group=main_menu_group)
 
     start_game_button = ui.Buttons(pos=(345, 180), image_pos=(0, 52), image_size=(65, 28), sprite_group=(main_menu_group), scale=2)
-    exit_button_on_main_menu = ui.Buttons(pos=(345, 240), image_pos=(214, 248), image_size=(65, 28), sprite_group=(main_menu_group), scale=2)
+    load_game_button = ui.Buttons(pos=(345, 240), image_pos=(69, 52), image_size=(65, 28), sprite_group=(main_menu_group), scale=2)
+    exit_button_on_main_menu = ui.Buttons(pos=(345, 300), image_pos=(214, 248), image_size=(65, 28), sprite_group=(main_menu_group), scale=2)
+
+    # Loading menu
+    loading_menu_background = ui.Img(pos=(250, 110), image_pos=(0, 400), image_size=(152, 132), sprite_group=(loading_menu_sprites), scale=2)
+    save2 = ui.Buttons(pos=(335, 150), image_pos=(214, 280), image_size=(65, 28), sprite_group=(loading_menu_sprites), scale=2)
+    save1 = ui.Buttons(pos=(335, 210), image_pos=(214, 280), image_size=(65, 28), sprite_group=(loading_menu_sprites), scale=2)
+    save3 = ui.Buttons(pos=(335, 270), image_pos=(214, 280), image_size=(65, 28), sprite_group=(loading_menu_sprites), scale=2)
+    back_to_main_menu_button = ui.Buttons(pos=(335, 380), image_pos=(283, 280), image_size=(65, 28), sprite_group=(loading_menu_sprites), scale=2)
+
+
 
     game_started = False
     game_paused = False
+    loading_menu_opened = False
 
     set_game_started(False)
 
@@ -153,13 +180,16 @@ if __name__ == '__main__':
                     running = False
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if start_game_button.mouse_clicked():
-                        set_game_started(True)
-                        for sprite in main_menu_group:
-                            sprite.kill()
-                            sprite.add(main_menu_group)
-                    if exit_button_on_main_menu.mouse_clicked():
-                        running = False
+                    if not loading_menu_opened:
+                        if start_game_button.mouse_clicked():
+                            set_game_started(True)
+                        if exit_button_on_main_menu.mouse_clicked():
+                            running = False
+                        if load_game_button.mouse_clicked():
+                            set_loading_menu_opened(True)
+                    else:
+                        if back_to_main_menu_button.mouse_clicked():
+                            set_loading_menu_opened(False)
                 
 
             main_menu_group.draw(screen)
