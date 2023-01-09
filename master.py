@@ -36,11 +36,16 @@ class Labyrinth:
     def __init__(self):
         self.rooms = []
         self.corridors = []
+        self.cnt_level = 0
+
         self.create_rooms()
         print(*self.map_list, sep='\n')
 
     def create_rooms(self):
         loading()
+        self.cnt_level += 1
+        self.text_level = f'Level {self.cnt_level}'
+        self.color = pygame.Color(255, 255, 255)  # его нужно менять потом
         self.map_list = list([0] * 4 for _ in range(4))
         count_room = random.randrange(1, 4)
         # кол-во доп комнат в уровне,
@@ -125,13 +130,18 @@ class Labyrinth:
         x, y = move()
         player.move(x, y)
         x, y = self.render(x, y)
-        heal_group.draw(screen)
+        sprites.heal_group.draw(screen)
         player.draw(screen)
         [i.draw(screen) for i in torch_group]
 
         x, y = self.render_passing_walls(x, y)
 
         x, y = self.collision_with_torches(x, y)
+
+        hsv = self.color.hsva
+        if hsv[2] >= 10:
+            self.color.hsva = (hsv[0], hsv[1], hsv[2] - 1, hsv[3])
+            self.show_level()
 
         if x or y:
             self.move_objects(x, y)
@@ -186,8 +196,12 @@ class Labyrinth:
             self.rooms.clear()
             self.corridors.clear()
             [i.kill() for i in sprites.torch_group]
-            [i.kill() for i in sprites.heal_group]
+            # [i.kill() for i in sprites.heal_group]
             self.create_rooms()
+
+    def show_level(self):
+        font = pygame.font.Font('ui/MinimalPixel v2.ttf', 30).render(self.text_level, True, self.color)
+        screen.blit(font, (others.WIDTH // 2 - font.get_width() // 2, 150))
 
 
 def loading():
@@ -232,7 +246,7 @@ if __name__ == '__main__':
                 running = False
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_e:
-                    heal = pygame.sprite.spritecollide(player, heal_group,False)
+                    heal = pygame.sprite.spritecollide(player, heal_group, False)
                     if heal:
                         heal[0].heal()  # персонаж увеличивает здоровье
                 if event.key == pygame.K_KP_ENTER or event.key == pygame.K_RETURN:

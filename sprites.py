@@ -178,6 +178,8 @@ class Barrel(pygame.sprite.Sprite):
         self.rect.y = y
         self.mask = pygame.mask.from_surface(self.image)
 
+        self.probality = 5  # вероятность выпадение бутылки исцеления в проценте
+
     def draw(self, screen):
         """Метод класса. Отрисовка бочки"""
         screen.blit(self.image, self.rect)
@@ -189,7 +191,7 @@ class Barrel(pygame.sprite.Sprite):
 
     def is_collide(self, pers, x_speed, y_speed):
         """Метод класса. Коллизия между персонажем и бочкой"""
-        pers.rect.y += pers.rect.height // 1.01  # Мы смотрим коллизию по ногам, а не по телу
+        pers.rect.y += pers.rect.height // 1.5  # здесь не нужно, чтобы голова персонажа была над бочкой по координате у
         self.rect.x -= x_speed
         if pygame.sprite.collide_mask(self, pers):  # вот где понадобилась маска
             self.rect.x += x_speed
@@ -202,8 +204,14 @@ class Barrel(pygame.sprite.Sprite):
             y_speed = 0
         else:
             self.rect.y += y_speed
-        pers.rect.y -= pers.rect.height // 1.01
+        pers.rect.y -= pers.rect.height // 1.5
         return x_speed, y_speed
+
+    def kill(self):
+        a = random.randrange(101)
+        if a <= self.probality:
+            Heal(self.rect.x, self.rect.y)
+        super(Barrel, self).kill()
 
 
 class Torch(pygame.sprite.Sprite):
@@ -403,6 +411,8 @@ class Heal(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
+
+        self.cnt_heal = 20
 
     def move(self, x, y):
         """Метод класса. Движение бутылки исцеления"""

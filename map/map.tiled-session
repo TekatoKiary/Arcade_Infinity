@@ -5,15 +5,15 @@
     },
     "activeFile": "barrels_and_spike/map1/variant1.tmx",
     "expandedProjectPaths": [
-        "barrels_and_spike/map0",
-        ".",
-        "barrels_and_spike/map5",
-        "ready_map",
         "barrels_and_spike/map3",
+        "barrels_and_spike/map0",
+        "ready_map",
         "barrels_and_spike/map2",
         "barrels_and_spike/map4",
+        ".",
+        "barrels_and_spike/map1",
         "barrels_and_spike",
-        "barrels_and_spike/map1"
+        "barrels_and_spike/map5"
     ],
     "file.lastUsedOpenFilter": "Все файлы (*)",
     "fileStates": {
@@ -174,8 +174,8 @@
             "scale": 0.8002130681818181,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 353.65580899973384,
-                "y": 354.28064258453895
+                "x": 351.156474660513,
+                "y": 351.78130824531826
             }
         },
         "mainlevbuild.tsx": {
