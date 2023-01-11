@@ -1,5 +1,6 @@
 import pygame
 import os
+import sprites
 
 pygame.init()
 shop_items_group = pygame.sprite.Group()
@@ -75,9 +76,8 @@ class Text(pygame.sprite.Sprite):
 
 
 class Shop(pygame.sprite.Sprite):
-    def __init__(self, player, sprite_group, pos, image_pos, image_size, image='main_ui.png'):
+    def __init__(self, sprite_group, pos, image_pos, image_size, image='main_ui.png'):
         super().__init__(sprite_group)
-        self.player = player
 
         self.sprite_group = sprite_group
         self.image = cut_image(load_image(image), image_pos, image_size)
@@ -199,11 +199,11 @@ class Shop(pygame.sprite.Sprite):
             self.page_counter.update_text(str(self.current_page + 1))
 
     def buy_item(self, item):
-        if self.player.balance >= item.cost:
-            self.player.balance -= item.cost
+        if sprites.player_group.sprite.balance >= item.cost:
+            sprites.player_group.sprite.balance -= item.cost
             gun = item.content.copy()
-            gun.cord_x = self.player.cord_x
-            gun.cord_y = self.player.cord_y
+            gun.cord_x = sprites.player_group.sprite.cord_x
+            gun.cord_y = sprites.player_group.sprite.cord_y
 
     def flip_shop_page(self):
         if self.button_next.mouse_clicked() and self.current_page + 1 <= len(self.items_list) // 12:
@@ -233,20 +233,17 @@ class ShopItems():
 
 
 class Inventory():
-    def __init__(self, player, sprite_group):
-        self.player = player
-        self.inventory = self.player.inventory
-        self.buttons = [Buttons(pos=(i * 65 + 300, 430), image_pos=(214, 156), image_size=(56, 56), sprite_group=sprite_group) for i in range(player.inventory_size)]
+    def __init__(self, sprite_group):
+        self.buttons = [Buttons(pos=(i * 65 + 300, 430), image_pos=(214, 156), image_size=(56, 56), sprite_group=sprite_group) for i in range(sprites.player_group.sprite.inventory_size)]
         self.update()
     
     def update(self):
-        self.inventory = self.player.inventory
         self.update_cells()
     
     def update_cells(self):
-        for i, cell in enumerate(self.inventory):
+        for i, cell in enumerate(sprites.player_group.sprite.inventory):
             self.buttons[i].update_image(image='main_ui.png', image_pos=(214, 156), image_size=(56, 56))
             if cell != None:
-                if cell == self.player.active_gun:
+                if cell == sprites.player_group.sprite.active_gun:
                     self.buttons[i].update_image(image='main_ui.png', image_pos=(274, 156), image_size=(56, 56))
                 self.buttons[i].image.blit(cell.rotate_image, cell.rotate_image.get_rect())

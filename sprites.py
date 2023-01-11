@@ -2,12 +2,14 @@ import pygame
 import math
 import random
 import ui
+import pickle
 
 PLAYER_RELOAD_EVENT = pygame.USEREVENT + 1
 PLAYER_SHOOT_EVENT = pygame.USEREVENT + 2
 
 all_sprites = pygame.sprite.Group()
-player_sprite = pygame.sprite.Group()
+entity_sprites = pygame.sprite.Group()
+player_group = pygame.sprite.GroupSingle()
 gun_sprites = pygame.sprite.Group()
 monster_sprites = pygame.sprite.Group()
 collide_group = pygame.sprite.Group()
@@ -17,21 +19,21 @@ dead_monsters = pygame.sprite.Group()
 ui_sprites = pygame.sprite.Group()
 
 
+
 class Player(pygame.sprite.Sprite):
-    def __init__(self, center_pos=(0, 0), image=None, max_hp=100):
+    def __init__(self, center_pos=(0, 0), image=None, max_hp=100, first_gun=None):
         super().__init__(all_sprites)
-        self.add(player_sprite)
+        self.add(player_group, entity_sprites)
 
         self.max_hp = max_hp
         self.hp_left = self.max_hp
 
         self.inventory_size = 3
-        self.inventory = [Gun(player=self, name='first_gun', center_pos=(300, 200), damage=20, ammo=-1, reload_time=1000), \
-            *[None for i in range(self.inventory_size - 1)]]
-    
+        self.inventory = [first_gun, *[None for _ in range(self.inventory_size - 1)]]
         self.active_gun = self.inventory[0]
-        self.active_gun.is_raised = True
-        self.cells = ui.Inventory(sprite_group=(all_sprites, ui_sprites), player=self)
+        self.active_gun.add(gun_sprites, all_sprites, entity_sprites)
+
+        self.cells = ui.Inventory(sprite_group=(all_sprites, ui_sprites))
 
         self.image = pygame.Surface((50, 50), pygame.SRCALPHA, 32)
         self.rect = self.image.get_rect()
@@ -69,7 +71,7 @@ class Player(pygame.sprite.Sprite):
     def take_gun(self):
         if self.inventory.count(None) > 0:
             for gun in gun_sprites:
-                if pygame.sprite.spritecollide(gun, player_sprite, False):
+                if pygame.sprite.spritecollide(gun, player_group, False):
                     if gun.can_be_raised and gun not in self.inventory:
                         gun.is_raised = True
                         gun.set_display(False)
@@ -130,14 +132,13 @@ class Player(pygame.sprite.Sprite):
 
 class Gun(pygame.sprite.Sprite):
     # damage_type: point, splash
-    def __init__(self, player, target_group=monster_sprites, name='gun', can_be_raised=True, center_pos=(0, 0), image=None, destroy_bullets=True, damage_type='point', bullet_image=None, bullet_color=(128, 128, 128), \
+    def __init__(self, is_raised=False, target_group=monster_sprites, name='gun', can_be_raised=True, center_pos=(0, 0), image=None, destroy_bullets=True, damage_type='point', bullet_image=None, bullet_color=(128, 128, 128), \
         bullet_size=(10, 10), bullet_speed=300, fire_rate=300, shooting_accuracy=1, damage=0, splash_damage=10, splash_radius=150, ammo=10, \
             reload_time=3000):
 
         super().__init__()
-        self.add(gun_sprites, all_sprites)
+        self.add(gun_sprites, all_sprites, entity_sprites)
 
-        self.player = player
         self.target_group = target_group
         self.name = name
 
@@ -178,14 +179,14 @@ class Gun(pygame.sprite.Sprite):
 
         self.can_be_raised = can_be_raised
         self.is_displayed = True
-        self.is_raised = False
+        self.is_raised = False or is_raised
         self.is_reloading_now = False
         self.can_shoot = True
     
     def set_display(self, bool):
         if bool:
             self.is_displayed = True
-            self.add(gun_sprites, all_sprites)
+            self.add(gun_sprites, all_sprites, entity_sprites)
         else:
             self.is_displayed = False
             all_sprites.remove(self)
@@ -222,7 +223,7 @@ class Gun(pygame.sprite.Sprite):
         return angle
     
     def copy(self):
-        return Gun(player=self.player, target_group=monster_sprites, can_be_raised=self.can_be_raised, name=self.name, center_pos=self.center_pos, image=self.original_image, destroy_bullets=self.destroy_bullets, \
+        return Gun(target_group=monster_sprites, can_be_raised=self.can_be_raised, name=self.name, center_pos=self.center_pos, image=self.original_image, destroy_bullets=self.destroy_bullets, \
             damage_type=self.damage_type, bullet_image=None, bullet_color=self.bullet_color, bullet_size=self.bullet_size, bullet_speed=self.bullet_speed, \
                 fire_rate=self.fire_rate, shooting_accuracy=self.shooting_accuracy, damage=self.damage, splash_damage=self.splash_damage, \
                     splash_radius=self.splash_radius, ammo=self.ammo, reload_time=self.reload_time)
@@ -232,8 +233,8 @@ class Gun(pygame.sprite.Sprite):
         self.rect.y = self.cord_y
 
         if self.is_raised:
-            self.cord_x = self.player.cord_x + 30
-            self.cord_y = self.player.cord_y + 20
+            self.cord_x = player_group.sprite.cord_x + 30
+            self.cord_y = player_group.sprite.cord_y + 20
 
             self.rotate(target=pygame.mouse.get_pos())
 
@@ -241,7 +242,7 @@ class Gun(pygame.sprite.Sprite):
 class Bullet(pygame.sprite.Sprite):
     def __init__(self, gun, cords_to=(0, 0)):
         super().__init__(all_sprites)
-        self.add(bullet_group)
+        self.add(bullet_group, entity_sprites)
 
         self.gun = gun
         self.target_group = self.gun.target_group
@@ -328,14 +329,12 @@ class Bullet(pygame.sprite.Sprite):
 
 
 class Monster(pygame.sprite.Sprite):
-    def __init__(self, player, center_pos, image, hp=100, reward=1, attack_range=200, gun=None, dead=False, running_speed=50, player_avoidance=True, move_randomly=True):
+    def __init__(self, center_pos, image, hp=100, reward=1, attack_range=200, gun=None, dead=False, running_speed=50, player_avoidance=True, move_randomly=True):
         super().__init__(all_sprites)
-        self.player = player
-        self.add(monster_sprites)
-        self.add(collide_group)
+        self.add(monster_sprites, collide_group, entity_sprites)
 
         if gun == None:
-            self.active_gun = Gun(player=self.player, name='bad pistol', damage=5, can_be_raised=False, bullet_color=(random.randint(96, 196), random.randint(96, 196), random.randint(96, 196)), fire_rate=1000, ammo=-1, shooting_accuracy=0.9, target_group=player_sprite)
+            self.active_gun = Gun(name='bad pistol', damage=5, can_be_raised=False, bullet_color=(random.randint(96, 196), random.randint(96, 196), random.randint(96, 196)), fire_rate=1000, ammo=-1, shooting_accuracy=0.9, target_group=player_group)
         else:
             self.active_gun = gun
 
@@ -366,7 +365,7 @@ class Monster(pygame.sprite.Sprite):
     
     def respawn(self):
         self.hp_left = self.max_hp
-        self.add(all_sprites, collide_group, monster_sprites)
+        self.add(all_sprites, collide_group, monster_sprites, entity_sprites)
         dead_monsters.remove(self)
         self.hp_bar.add(all_sprites, bar_sprites)
         self.active_gun.add(all_sprites, gun_sprites)
@@ -377,20 +376,20 @@ class Monster(pygame.sprite.Sprite):
         self.add(dead_monsters)
     
     def give_reward(self):
-        self.player.give_money(self.reward)
+        player_group.sprite.give_money(self.reward)
     
     def shoot(self):
         if self.shooting_timer > 0:
             if random.randint(0, 4) == 0:
                 self.shooting_timer -= 1
         else:
-            self.active_gun.shoot((self.player.rect.centerx, self.player.rect.centery))
+            self.active_gun.shoot((player_group.sprite.rect.centerx, player_group.sprite.rect.centery))
             self.shooting_timer = 10
     
     def walk(self, movement_direction=1, random_direction=1):
-        distance = max(math.sqrt((self.rect.centerx - self.player.rect.centerx) ** 2 + (self.rect.centery - self.player.rect.centery) ** 2), 1)
-        vx = (self.rect.centerx - self.player.rect.centerx) / distance / 60 * self.running_speed
-        vy = (self.rect.centery - self.player.rect.centery) / distance / 60 * self.running_speed
+        distance = max(math.sqrt((self.rect.centerx - player_group.sprite.rect.centerx) ** 2 + (self.rect.centery - player_group.sprite.rect.centery) ** 2), 1)
+        vx = (self.rect.centerx - player_group.sprite.rect.centerx) / distance / 60 * self.running_speed
+        vy = (self.rect.centery - player_group.sprite.rect.centery) / distance / 60 * self.running_speed
 
         self.cord_x -= movement_direction * vx * random_direction
         self.cord_y -= movement_direction * vy * random_direction
@@ -402,7 +401,7 @@ class Monster(pygame.sprite.Sprite):
 
     
     def distance_check(self):
-        self.current_distance_sqr = (self.rect.centerx - self.player.rect.centerx) ** 2 + (self.rect.centery - self.player.rect.centery) ** 2
+        self.current_distance_sqr = (self.rect.centerx - player_group.sprite.rect.centerx) ** 2 + (self.rect.centery - player_group.sprite.rect.centery) ** 2
         if self.current_distance_sqr < (self.attack_range + 100) ** 2:
             self.shoot()
 
@@ -436,7 +435,7 @@ class Monster(pygame.sprite.Sprite):
             self.active_gun.cord_y = self.rect.centery
 
             self.distance_check()
-            self.active_gun.rotate(self.player.rect.center)
+            self.active_gun.rotate(player_group.sprite.rect.center)
 
 
 class Bars(pygame.sprite.Sprite):
@@ -458,7 +457,7 @@ class Bars(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
     def update(self):
-        if dead_monsters in self.owner.groups():
+        if dead_monsters in self.owner.groups() or len(self.owner.groups()) == 0:
             self.kill()
 
         self.hp_left = self.owner.hp_left
