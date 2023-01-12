@@ -2,7 +2,8 @@ import pygame
 import ui
 import sprites
 import random
-
+import pickle
+import os
 
 
 def update_fps(sprite):
@@ -11,6 +12,10 @@ def update_fps(sprite):
 def update_hp_bar(bar, health_percent):
     size_delta = (1 - health_percent) * 94
     bar.update_image(image='main_ui.png', image_pos=(214 + size_delta, 0), image_size=(96 - size_delta, 18))
+
+    if health_percent <= 0:
+        set_game_over(True)
+        print(123)
 
 def update_player_balance(sprite):
         sprite.update_text(text=sprites.player_group.sprite.balance)
@@ -31,7 +36,7 @@ def give_gun(gun):
     gun.cord_y = sprites.player_group.sprite.cord_y
     sprites.player_group.sprite.take_gun()
 
-def init_sprites():
+def init_sprites(saveid=0):
     for sprite in sprites.entity_sprites:
         sprite.kill()
         sprites.all_sprites.remove(sprite)
@@ -44,22 +49,57 @@ def init_sprites():
         sprites.bar_sprites.remove(sprite)
         sprites.dead_monsters.remove(sprite)
 
-    # with open('stats/test.bin', 'rb') as test:
+    try:
+        player_stats = game_load(current_save_id)
+    except Exception:
+        forced_save_update(current_save_id)
+    player_inventory = [GUNS[gun] for gun in player_stats['player_inventory']]
 
-
-
-
-
-    player_stats = []
-    map_stats = []
-
-    pl = sprites.Player((100, 100), first_gun=GUNS['FirstGun'])
+    pl = sprites.Player((100, 100), inventory=player_inventory, hp_left=player_stats['player_hp'], balance=player_stats['player_balance'])
 
     m1 = sprites.Monster(center_pos=(300, 100), attack_range=50, image=ui.cut_image(ui.load_image(name='Ghoul Sprite Sheet.png', path='textures'), (3, 9), (27, 23)), gun=GUNS['Fists'], player_avoidance=False, running_speed=70, move_randomly=False)
-    m2 = sprites.Monster(center_pos=(600, 100), image=ui.cut_image(ui.load_image(name='zombie old lady.png', path='textures'), (11, 1), (10, 15)))
+    m2 = sprites.Monster(center_pos=(600, 100), image=ui.cut_image(ui.load_image(name='zombie old lady.png', path='textures'), (11, 1), (10, 15)), running_speed=100)
     m3 = sprites.Monster(center_pos=(650, 130), image=ui.cut_image(ui.load_image(name='zombie old lady.png', path='textures'), (11, 1), (10, 15)))
     m3 = sprites.Monster(center_pos=(700, 160), image=ui.cut_image(ui.load_image(name='zombie old lady.png', path='textures'), (11, 1), (10, 15)))
     m3 = sprites.Monster(center_pos=(650, 190), image=ui.cut_image(ui.load_image(name='zombie old lady.png', path='textures'), (11, 1), (10, 15)))
+
+def forced_save_update(saveid):
+        data = {}
+        data['player_inventory'] = ['FirstGun', 'None', 'None']
+        data['player_balance'] = 0
+        data['player_hp'] = 100
+        data['level'] = '1'
+        with open(f"saves/save_{saveid}.bin", "wb") as fp:
+            pickle.dump(data, fp)
+
+# forced_save_update(3)
+            
+def game_save(saveid, set_to_default=False):
+    if not set_to_default:
+        data = {}
+        data['player_inventory'] = list((item.name if item != None else 'None') for item in sprites.player_group.sprite.inventory)
+        data['player_balance'] = sprites.player_group.sprite.balance
+        data['player_hp'] = sprites.player_group.sprite.hp_left
+        data['level'] = '1'
+        with open(f"saves/save_{saveid}.bin", "wb") as fp:
+            pickle.dump(data, fp)
+    else:
+        data = {}
+        data['player_inventory'] = ['FirstGun', 'None', 'None']
+        data['player_balance'] = 0
+        data['player_hp'] = 100
+        data['level'] = '1'
+        with open(f"saves/save_{saveid}.bin", "wb") as fp:
+            pickle.dump(data, fp)
+
+def game_load(saveid):
+    with open(f"saves/save_{saveid}.bin", "rb") as fp:
+        return pickle.load(fp)
+
+def change_save(save_id):
+    global current_save_id
+    current_save_id = save_id
+
 
 if __name__ == '__main__':
     pygame.init()
@@ -69,6 +109,8 @@ if __name__ == '__main__':
     clock = pygame.time.Clock()
     FPS = 60
     running = True
+
+    current_save_id = 1
 
     GUN_TEXTURES = {
         'Transperent': pygame.Surface((5, 5), pygame.SRCALPHA, 32),
@@ -83,6 +125,7 @@ if __name__ == '__main__':
     }
 
     GUNS = {
+        'None': None,
         'FirstGun': sprites.Gun(name='FirstGun', center_pos=(300, 200), ammo=-1, image=GUN_TEXTURES['Pistol'], is_raised=True, damage=30),
         'Ak47': sprites.Gun(name='Ak47', image=GUN_TEXTURES['Ak47'], center_pos=(200, 200), ammo=999, damage=100, bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=150, shooting_accuracy=0.95),
         'Pistol': sprites.Gun(name='pistol', center_pos=(300, 200), ammo=-1, image=GUN_TEXTURES['Pistol']),
@@ -92,7 +135,7 @@ if __name__ == '__main__':
         'GrenadeLauncher': sprites.Gun(name='GrenadeLauncher', fire_rate=1000, shooting_accuracy=0.8, damage=30, damage_type='splash', splash_damage=30, splash_radius=100, bullet_color=(64, 64, 196), image=GUN_TEXTURES['GrenadeLauncher']),
         'BallLightningLauncher': sprites.Gun(name='BallLightningLauncher', fire_rate=100, damage=100, ammo=1, reload_time=5000, destroy_bullets=False, bullet_color=(128, 128, 255), bullet_speed=50, bullet_size=(30, 30), image=GUN_TEXTURES['BallLightningLauncher']),
         'Infinity': sprites.Gun(name='Infinity', fire_rate=300, damage=30, bullet_color=(196, 196, 64), ammo=-1, image=GUN_TEXTURES['Infinity']),
-        'MinePlacer': sprites.Gun(bullet_color=(196, 128, 64), damage=100, bullet_speed=0, ammo=1, reload_time=10, bullet_size=(20, 20), image=GUN_TEXTURES['MinePlacer'])
+        'MinePlacer': sprites.Gun(name='MinePlacer', bullet_color=(196, 128, 64), damage=100, bullet_speed=0, ammo=1, reload_time=10, bullet_size=(20, 20), image=GUN_TEXTURES['MinePlacer'])
     }
 
     # Основные спрайты
@@ -153,7 +196,6 @@ if __name__ == '__main__':
             game_started = False
         
         init_sprites()
-
     
     def set_loading_menu_opened(bool):
         global loading_menu_opened
@@ -165,10 +207,23 @@ if __name__ == '__main__':
             loading_menu_opened = False
             for sprite in loading_menu_sprites:
                 main_menu_group.remove(sprite)
+    
+    def set_game_over(bool):
+        global game_over
+        if bool:
+            game_over = True
+            for sprite in game_over_sprites:
+                sprite.add(sprites.all_sprites)
+        else:
+            game_over = False
+            for sprite in game_over_sprites:
+                sprites.all_sprites.remove(sprite)
+
 
     pause_group = pygame.sprite.Group()
     main_menu_group = pygame.sprite.Group()
     loading_menu_sprites = pygame.sprite.Group()
+    game_over_sprites = pygame.sprite.Group()
 
     # Pause
     pause_button = ui.Buttons((390, 10), image_pos=(320, 44), image_size=(36, 36), sprite_group=(sprites.all_sprites, sprites.ui_sprites))
@@ -194,19 +249,32 @@ if __name__ == '__main__':
     start_game_button = ui.Buttons(pos=(345, 180), image_pos=(0, 52), image_size=(65, 28), sprite_group=(main_menu_group), scale=2)
     load_game_button = ui.Buttons(pos=(345, 240), image_pos=(69, 52), image_size=(65, 28), sprite_group=(main_menu_group), scale=2)
     exit_button_on_main_menu = ui.Buttons(pos=(345, 300), image_pos=(214, 248), image_size=(65, 28), sprite_group=(main_menu_group), scale=2)
+    current_save = ui.Text(pos=(385, 150), text=f"save {current_save_id}", sprite_group=(main_menu_group), size=14)
 
     # Loading menu
     loading_menu_background = ui.Img(pos=(250, 110), image_pos=(0, 400), image_size=(152, 132), sprite_group=(loading_menu_sprites), scale=2)
-    save2 = ui.Buttons(pos=(335, 150), image_pos=(214, 280), image_size=(65, 28), sprite_group=(loading_menu_sprites), scale=2)
-    save1 = ui.Buttons(pos=(335, 210), image_pos=(214, 280), image_size=(65, 28), sprite_group=(loading_menu_sprites), scale=2)
+    save1 = ui.Buttons(pos=(335, 150), image_pos=(214, 280), image_size=(65, 28), sprite_group=(loading_menu_sprites), scale=2)
+    save2 = ui.Buttons(pos=(335, 210), image_pos=(214, 280), image_size=(65, 28), sprite_group=(loading_menu_sprites), scale=2)
     save3 = ui.Buttons(pos=(335, 270), image_pos=(214, 280), image_size=(65, 28), sprite_group=(loading_menu_sprites), scale=2)
     back_to_main_menu_button = ui.Buttons(pos=(335, 380), image_pos=(283, 280), image_size=(65, 28), sprite_group=(loading_menu_sprites), scale=2)
 
+    # game lost
+
+    red_bg = pygame.sprite.Sprite(game_over_sprites)
+    red_bg.image = pygame.Surface((1920, 1080), pygame.SRCALPHA, 32)
+    red_bg.rect = black_bg.image.get_rect()
+    red_bg.image.set_alpha(128)
+    pygame.draw.rect(red_bg.image, (64, 0, 0), (0, 0, 1920, 1080))
+
+    restart_button = ui.Buttons(pos=(345, 130), image_pos=(283, 216), image_size=(65, 28), sprite_group=(game_over_sprites), scale=1.5)
+    exit_button_on_game_over = ui.Buttons(pos=(345, 180), image_pos=(214, 248), image_size=(65, 28), sprite_group=(game_over_sprites), scale=1.5)
+    info1 = ui.Text(pos=(200, 290), sprite_group=game_over_sprites, text='GAME OVER', size=64)
 
 
     game_started = False
     game_paused = False
     loading_menu_opened = False
+    game_over = False
 
     set_game_started(False)
 
@@ -227,8 +295,13 @@ if __name__ == '__main__':
                     else:
                         if back_to_main_menu_button.mouse_clicked():
                             set_loading_menu_opened(False)
-                
-
+                        if save1.mouse_clicked():
+                            change_save(1)
+                        if save2.mouse_clicked():
+                            change_save(2)
+                        if save3.mouse_clicked():
+                            change_save(3)
+            current_save.update_text(f"save {current_save_id}")
             main_menu_group.draw(screen)
 
         elif game_paused:
@@ -240,11 +313,28 @@ if __name__ == '__main__':
                         set_game_paused(False)
                     
                     if exit_button_on_pause.mouse_clicked():
+                        game_save(current_save_id)
                         set_game_paused(False)
                         set_game_started(False)
+                        shop.set_visible(False)
                         
             sprites.all_sprites.draw(screen)
+        
+        elif game_over:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
 
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if exit_button_on_game_over.mouse_clicked():
+                        set_game_paused(False)
+                        set_game_started(False)
+                        set_game_over(False)
+                        shop.set_visible(False)
+                    if restart_button.mouse_clicked():
+                        game_save(current_save_id, True)
+                        init_sprites()
+                        set_game_over(False)
         else:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

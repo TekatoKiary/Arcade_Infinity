@@ -19,17 +19,16 @@ dead_monsters = pygame.sprite.Group()
 ui_sprites = pygame.sprite.Group()
 
 
-
 class Player(pygame.sprite.Sprite):
-    def __init__(self, center_pos=(0, 0), image=None, max_hp=100, first_gun=None):
+    def __init__(self, center_pos=(0, 0), image=None, max_hp=100, inventory=None, hp_left=100, balance=0):
         super().__init__(all_sprites)
         self.add(player_group, entity_sprites)
 
         self.max_hp = max_hp
-        self.hp_left = self.max_hp
+        self.hp_left = hp_left
 
         self.inventory_size = 3
-        self.inventory = [first_gun, *[None for _ in range(self.inventory_size - 1)]]
+        self.inventory = inventory
         self.active_gun = self.inventory[0]
         self.active_gun.add(gun_sprites, all_sprites, entity_sprites)
 
@@ -45,7 +44,7 @@ class Player(pygame.sprite.Sprite):
         self.cord_x = self.rect.x
         self.cord_y = self.rect.y
 
-        self.balance = 10
+        self.balance = balance
     
     def take_damage(self, damage):
         self.hp_left -= damage
@@ -107,6 +106,7 @@ class Player(pygame.sprite.Sprite):
             self.active_gun.set_display(False)
             self.active_gun = self.inventory[n]
             self.active_gun.set_display(True)
+            self.active_gun.is_raised = True
             self.cells.update()
 
     def move(self):
