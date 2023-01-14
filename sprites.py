@@ -1,75 +1,97 @@
+import math
+import ui
 import random
 import pygame
 import others
 from others import is_collide_with_speed, TILED_MAP_DIR
 import pytmx
-import os
-import sys
+import images
+from images import GUN_TEXTURES
 
 # В чем смысл id: в tiled комнаты есть отдельный слой, где как раз хранятся особенные плитки - флажки.
 # Так как это плитка, следовательно, у неё есть id.
 # Какие есть id и что они означают: об id написано в классах, где используют их
 
 
-torch_group = pygame.sprite.Group()  # группа свечей
+PLAYER_RELOAD_EVENT = pygame.USEREVENT + 1
+PLAYER_SHOOT_EVENT = pygame.USEREVENT + 2
+
+# 5 функция load_image перенесена в image.py
+
+# В принципе, если перевести название, то сразу станет понятно, что за группы спрайтов
+all_sprites = pygame.sprite.Group()
+player_group = pygame.sprite.Group()
+gun_sprites = pygame.sprite.Group()
+monster_sprites = pygame.sprite.Group()
+bullet_group = pygame.sprite.Group()
+bar_sprites = pygame.sprite.Group()
+ui_sprites = pygame.sprite.Group()
+torch_group = pygame.sprite.Group()
 heal_group = pygame.sprite.Group()
+cell_group = pygame.sprite.Group()
+barrel_group = pygame.sprite.Group()
+dead_group = pygame.sprite.Group()
 
-
-def load_image_textures(name, colorkey=None):
-    fullname = os.path.join('textures', name)
-    if not os.path.isfile(fullname):
-        print(f"Файл с изображением '{fullname}' не найден")
-        sys.exit()
-    image = pygame.image.load(fullname)
-
-    if colorkey is not None:
-        image = image.convert()
-        if colorkey == -1:
-            colorkey = image.get_at((0, 0))
-        image.set_colorkey(colorkey)
-    else:
-        image = image.convert_alpha()
-    return image
+spike_damage_delay = 1  # Переменная нужна для класса Spike. Там будет объяснение значения переменной
 
 
 class Player(pygame.sprite.Sprite):
     """Класс Player. Создается игрок"""  # Я больше ничего не мог придумать, чтобы объяснить, что такое Player
-    image = load_image_textures('Adventurer\\adventurer_stand_prob_0.png',
-                                -1)  # Изначальное изображение. Нужен для коллизии
-    image = pygame.transform.scale(load_image_textures('Adventurer\\adventurer_stand_prob_0.png',
-                                                       -1), (30, image.get_rect().height * 2.3))
-    images_stand = [load_image_textures(f'Adventurer\\adventurer_stand_prob_{i}.png', -1)
-                    for i in range(13)]  # спрайты игрока, когда он стоит
-    images_move = [load_image_textures(f'Adventurer\\adventurer_move_prob_{i}.png', -1)
-                   for i in range(8)]  # спрайты игрока, когда он двигается
 
-    def __init__(self):
-        super(Player, self).__init__()
-        self.images_stand = [pygame.transform.scale(i, (30, self.image.get_height())) for i in self.images_stand]
-        self.images_move = [pygame.transform.scale(i, (30, self.image.get_height())) for i in self.images_move]
+    def __init__(self, max_hp=100):
+        super().__init__()
+        self.add(player_group)
+        self.image = images.player_image
+        self.max_hp = max_hp
+        self.hp_left = self.max_hp
+        self.current_level = 1
+
+        self.inventory_size = 3
+        # 5 self.inventory перенесен в метод set_inventory
+        self.images_stand = images.player_images_stand
+        self.images_move = images.player_images_move
         self.rect = self.image.get_rect()
-        self.rect.x = self.x = others.WIDTH // 2
-        self.rect.y = self.y = others.HEIGHT // 2
+        self.rect.x = others.WIDTH // 2
+        self.rect.y = others.HEIGHT // 2
         image = pygame.transform.scale(self.image,
                                        (30, self.image.get_rect().height - self.rect.height // 1.01))
         self.mask = pygame.mask.from_surface(image)  # маска нужна для коллизии с бочками
         # Зачем нужен новый image с изменёнными параметрами: в маске будет храниться изображение, можно сказать, ног
-        self.cnt = 0  # счетчик для изменения спрайтов
+        self.cnt = 0  # счетчик для анимации спрайтов
         self.step = 10  # именно настолько увеличивается self.cnt
         self.is_moving = False  # он идет или нет? Вот в чем вопрос
         self.left_right = 1  # взгляд направо - 1, взгляд налево - 0
+        self.is_attacking = False
+
+        self.cord_x = self.rect.x
+        self.cord_y = self.rect.y
+
+        self.balance = 0
+
+    def set_inventory(self, inventory):
+        """Метод класса. Установка инвентаря игрока"""
+        self.inventory = inventory
+        for i in self.inventory:
+            if i:
+                i.player = self
+                i.is_raised = True
+        self.active_gun = self.inventory[0]
+        self.cells = ui.Inventory(sprite_group=(all_sprites, ui_sprites), player=self)
 
     def draw(self, screen):
         """Метод класса. Отрисовка игрока"""
-        if self.is_moving:
+        if self.is_moving:  # отрисовка движения
             screen.blit(self.images_move[self.cnt // self.step], self.rect)
-        else:
+        elif self.is_attacking:  # отрисовка атаки
+            screen.blit(self.images_stand[0], self.rect)
+        else:  # отрисовка статичного игрока
             screen.blit(self.images_stand[self.cnt // self.step], self.rect)
+        self.active_gun.draw(screen)
 
     def move(self, x, y):
         """Метод класса. Движение игрока"""
-        self.rect.x = self.x = others.WIDTH // 2 - self.rect.width // 2  # он всегда остаётся в центре(внимания) экрана
-        self.rect.y = self.y = others.HEIGHT // 2 - self.rect.height // 2
+        self.rect.x = others.WIDTH // 2 - self.rect.width // 2  # он всегда остаётся в центре(внимания) экрана
+        self.rect.y = others.HEIGHT // 2 - self.rect.height // 2
         if (x or y) and not self.is_moving:  # если он начинает движение, но до этого стоял
             self.cnt = 0
             self.is_moving = True
@@ -80,9 +102,9 @@ class Player(pygame.sprite.Sprite):
             self.cnt = 0
         elif not (x or y) and not self.is_moving:  # если он стоит
             self.cnt += -self.cnt if self.cnt >= self.step * (len(self.images_stand) - 1) else 1
-        self.set_left_right()
+        self._set_left_right()
 
-    def set_left_right(self):
+    def _set_left_right(self):
         """Метод класса. Определяет взгляд игрока относительно мышки пользователя"""
         # решил сделать так: мышка на левой стороне экрана игры - персонаж смотрит налево и даже когда идет направо;
         # мышка на правой стороне экрана игры - персонаж смотрит направо и даже когда идет налево
@@ -97,47 +119,594 @@ class Player(pygame.sprite.Sprite):
             self.images_move = [pygame.transform.flip(i, True, False) for i in self.images_move]
             self.images_stand = [pygame.transform.flip(i, True, False) for i in self.images_stand]
 
+    def take_damage(self, damage):
+        """Метод класса. Уменьшение здоровья игрока полученным уроном"""
+        self.hp_left -= damage
+
+    def on_clicked(self, event):
+        """Метод класса. Проверка нажатия мыши"""
+        if event.button == 1:
+            damage = self.active_gun.damage
+            if self.current_level >= 20:
+                self.active_gun.damage *= 0.5
+            elif self.current_level >= 10:
+                self.active_gun.damage *= 0.75
+            self.active_gun.try_shoot()
+            self.is_attacking = True
+            self.active_gun.damage = damage
+        else:
+            self.is_attacking = False
+
+    def on_k_pressed(self, event):
+        """Метод класса. Проверка нажатия клавиш"""
+        if event.key == pygame.K_g:
+            self.drop_gun()
+        if event.key == pygame.K_f:
+            self.take_gun()
+
+        if event.key == pygame.K_1:
+            self.switch_gun(0)
+        if event.key == pygame.K_2:
+            self.switch_gun(1)
+        if event.key == pygame.K_3:
+            self.switch_gun(2)
+
+    def take_gun(self):
+        """Метод класса. Если у игрока свободен хотя бы один слот инвентаря, то он подбирает оружие"""
+        if self.inventory.count(None) > 0:
+            for gun in gun_sprites:
+                if pygame.sprite.spritecollide(gun, player_group, False):
+                    if gun.can_be_raised and gun not in self.inventory:
+                        gun.player = self
+                        gun.is_raised = True
+                        gun.set_display(False)
+                        gun_sprites.remove(gun)
+                        for i, item in enumerate(self.inventory):
+                            if item is None:
+                                self.inventory[i] = gun
+                                break
+                        break
+            self.cells.update()
+
+    def drop_gun(self):
+        """Метод класса. Игрок выбрасывает текущее оружие, если это не последнее оружие"""
+        if self.inventory.count(None) < 2:
+            self.active_gun.is_raised = False
+            gun_sprites.add(self.active_gun)
+            self.active_gun.is_reloading_now = False
+            pygame.time.set_timer(self.active_gun.reload_event, 0)
+            self.active_gun.can_shoot = True
+            pygame.time.set_timer(self.active_gun.shoot_event, 0)
+
+            self.inventory.remove(self.active_gun)
+            self.inventory.append(None)
+            for item in self.inventory[::-1]:
+                if item is not None:
+                    self.active_gun = item
+            self.active_gun.set_display(True)
+            self.cells.update()
+
+    def switch_gun(self, n):
+        """Метод класса. Игрок меняет оружие, которые находятся в инвентаре"""
+        if self.inventory[n]:
+            self.active_gun.is_reloading_now = False
+            pygame.time.set_timer(self.active_gun.reload_event, 0)
+            self.active_gun.can_shoot = True
+            pygame.time.set_timer(self.active_gun.shoot_event, 0)
+            self.active_gun.set_display(False)
+            self.active_gun = self.inventory[n]
+            self.active_gun.set_display(True)
+            self.cells.update()
+
+    def give_money(self, reward):
+        """Метод класса. Игрок получает определенное кол-во монет"""
+        self.balance += reward
+
+    def update(self):
+        """Метод класса. Обновление игрока"""
+        self.rect.x = self.cord_x
+        self.rect.y = self.cord_y
+        self.active_gun.update()
+
+    def set_current_level(self, current_level):
+        self.current_level = current_level
+
+
+class Gun(pygame.sprite.Sprite):
+    """Класс Gun. Создается оружие"""
+
+    # damage_type: point, splash
+    def __init__(self, player=None, target_group=monster_sprites, name='gun', can_be_raised=True, center_pos=(0, 0),
+                 image=None, destroy_bullets=True, damage_type='point', bullet_image=None, bullet_color=(128, 128, 128),
+                 bullet_size=(10, 10), bullet_speed=300, fire_rate=300, shooting_accuracy=1, damage=0, splash_damage=10,
+                 splash_radius=150, ammo=10, reload_time=3000):
+
+        super().__init__()
+        self.add(gun_sprites)
+
+        self.player = player
+        self.target_group = target_group
+        self.name = name
+
+        # Их не изменять
+        self.center_pos = center_pos
+        self.destroy_bullets = destroy_bullets
+        self.bullet_color = bullet_color
+        self.bullet_image = bullet_image
+        self.bullet_size = bullet_size
+        self.bullet_speed = bullet_speed
+        self.damage_type = damage_type
+        self.damage = damage
+        self.splash_damage = splash_damage
+        self.splash_radius = splash_radius
+        self.ammo = ammo
+        self.fire_rate = fire_rate
+        self.shooting_accuracy = shooting_accuracy
+
+        self.ammo_amount = self.ammo
+        self.reload_time = reload_time
+
+        self.reload_event = PLAYER_RELOAD_EVENT
+        self.shoot_event = PLAYER_SHOOT_EVENT
+
+        self.original_image = image
+        if image is None:
+            self.image = pygame.Surface((25, 25), pygame.SRCALPHA, 32)
+            pygame.draw.rect(self.image, self.bullet_color, (0, 0, 25, 25), 0)
+        else:
+            self.image = pygame.transform.scale(image, (image.get_width() * 1.5, image.get_height() * 1.5))
+
+        self.rotate_image = self.image
+        self.rect = self.image.get_rect(center=center_pos)
+
+        self.cord_x = self.rect.x
+        self.cord_y = self.rect.y
+
+        self.can_be_raised = can_be_raised
+        self.is_displayed = True
+        self.is_raised = False
+        self.is_reloading_now = False
+        self.can_shoot = True
+        self.left_right = 1  # взгляд направо - 1, взгляд налево - 0
+
+    def draw(self, screen):
+        """Метод класса. Отрисовка оружия"""
+        if self.is_raised and self.player.active_gun != self:  # если он в инвентаре и он не текущее оружие игрока то...
+            return
+        screen.blit(self.image, self.rect)
+
+    def set_display(self, flag):
+        if flag:
+            self.is_displayed = True
+            if self not in gun_sprites:
+                self.add(gun_sprites)
+        else:
+            self.is_displayed = False
+
+    def try_shoot(self):
+        if self.can_shoot:
+            self.shoot(target_pos=pygame.mouse.get_pos())
+            self.can_shoot = False
+            pygame.time.set_timer(self.shoot_event, self.fire_rate)
+
+    def shoot(self, target_pos):
+        """Метод класса. Производится подобие выстрела, то есть просто создается пуля"""
+        if not self.is_reloading_now:
+            if self.ammo_amount > 0 or self.ammo < 0:
+                self.ammo_amount -= 1  # 5 поправил твой код
+                Bullet(self, target_pos)
+            if self.ammo_amount <= 0:
+                self.is_reloading_now = True
+                pygame.time.set_timer(self.reload_event, self.reload_time)
+
+    def reload_ammo(self):
+        """Метод класса. Перезарядка оружия"""
+        self.is_reloading_now = False
+        self.ammo_amount = self.ammo
+
+    def rotate(self, target):
+        """Метод класса. Вращение оружия"""
+        self.image = pygame.transform.rotate(
+            self.rotate_image, self.math_angle(target) - 90)
+
+    def math_angle(self, target):
+        rel_x, rel_y = target[0] - self.cord_x - \
+                       self.rotate_image.get_width() / 2, target[1] - \
+                       self.cord_y - self.rotate_image.get_height() / 2
+        angle = (180 / math.pi) * math.atan2(rel_x, rel_y)
+        return angle
+
+    def copy(self, center_pos=None):
+        """Метод класса. Возвращает копию этого оружия"""
+        if center_pos is None:
+            center_pos = self.center_pos
+        return Gun(player=None, target_group=monster_sprites, can_be_raised=self.can_be_raised, name=self.name,
+                   center_pos=center_pos, image=self.original_image, destroy_bullets=self.destroy_bullets,
+                   damage_type=self.damage_type, bullet_image=None, bullet_color=self.bullet_color,
+                   bullet_size=self.bullet_size, bullet_speed=self.bullet_speed, fire_rate=self.fire_rate,
+                   shooting_accuracy=self.shooting_accuracy, damage=self.damage, splash_damage=self.splash_damage,
+                   splash_radius=self.splash_radius, ammo=self.ammo, reload_time=self.reload_time)
+
+    def update(self):
+        """Метод класса. Обновление оружия"""
+        self.rect.x = self.cord_x
+        self.rect.y = self.cord_y
+
+        if self.is_raised:
+            # 5 подправил код для вращения игрока
+            if self.left_right != self.player.left_right and self == self.player.active_gun:
+                self.left_right = self.player.left_right
+                self.rotate_image = pygame.transform.flip(self.rotate_image, False, True)
+            self.cord_x = self.player.cord_x - self.rect.width // 2 + (5 if self.left_right else -5)
+            self.cord_y = self.player.cord_y - self.rect.height // 2 + 4
+
+            if type(self.player) == Player:
+                self.rotate(target=pygame.mouse.get_pos())
+            # 5 ----------------------
+
+    def move(self, x, y):
+        """Метод класса. Движение оружия"""
+        if not self.is_raised:
+            self.cord_x -= x
+            self.cord_y -= y
+
+
+class Shotgun(Gun):
+    def __init__(self, is_raised=False, target_group=monster_sprites, name='gun',
+                 can_be_raised=True, center_pos=(0, 0), image=None, destroy_bullets=True, damage_type='point',
+                 bullet_image=None, bullet_color=(128, 128, 128), bullet_size=(10, 10), bullet_speed=300,
+                 fire_rate=300, shooting_accuracy=1, damage=0, splash_damage=10, splash_radius=150, ammo=10,
+                 reload_time=3000):
+        super().__init__(is_raised, target_group, name, can_be_raised, center_pos, image, destroy_bullets,
+                         damage_type, bullet_image, bullet_color, bullet_size, bullet_speed, fire_rate,
+                         shooting_accuracy, damage, splash_damage, splash_radius, ammo, reload_time)
+
+    def shoot(self, target_pos):
+        if not self.is_reloading_now:
+            if self.ammo_amount > 0:
+                self.ammo_amount -= 1
+                for _ in range(5):
+                    self.bullet_speed = random.randint(250, 350)
+                    Bullet(self, target_pos)
+            else:
+                self.is_reloading_now = True
+                pygame.time.set_timer(self.reload_event, self.reload_time)
+
+
+class Bullet(pygame.sprite.Sprite):
+    """Класс Gun. Создается пуля"""
+
+    def __init__(self, gun, cords_to=(0, 0)):
+        super().__init__()
+        self.add(bullet_group)
+
+        self.gun = gun
+        self.target_group = self.gun.target_group
+        self.cords_to = cords_to
+        self.cords_from = (self.gun.rect.centerx, self.gun.rect.centery)
+
+        self.cords = [self.cords_from[0], self.cords_from[1]]
+        self.damage = gun.damage
+        self.splashdamage = gun.splash_damage
+
+        if self.gun.bullet_image is None:
+            self.image = pygame.Surface((self.gun.bullet_size[0], self.gun.bullet_size[1]), pygame.SRCALPHA, 32)
+            pygame.draw.rect(self.image, self.gun.bullet_color,
+                             (0, 0, self.gun.bullet_size[0], self.gun.bullet_size[1]), 0)
+        else:
+            self.image = self.gun.bullet_image
+        self.rect = self.image.get_rect()
+        self.rect.x = self.cords_from[0]
+        self.rect.y = self.cords_from[1]
+        self.mask = pygame.mask.from_surface(self.image)
+        self.vx, self.vy = self.math_speed()
+        self.rotate()
+
+    def math_angle(self):
+        rel_x, rel_y = self.randomized_mouse_cord_x - self.rect.x - \
+                       self.gun.bullet_size[0] / 2, self.randomized_mouse_cord_y - \
+                       self.rect.y - self.gun.bullet_size[1] / 2
+        angle = (180 / math.pi) * math.atan2(rel_x, rel_y)
+        return angle
+
+    def rotate(self):
+        """Метод класса. Вращение пули"""
+        self.image = pygame.transform.rotate(self.image, self.math_angle())
+
+    def math_speed(self):
+        """Метод класса. Возвращает скорость пули"""
+        self.randomized_mouse_cord_x = self.cords_to[0] + random.choice([-1, 1]) * random.uniform(0, (
+                1 - self.gun.shooting_accuracy)) * self.cords_to[0]
+
+        self.randomized_mouse_cord_y = self.cords_to[1] + random.choice([-1, 1]) * random.uniform(0, (
+                1 - self.gun.shooting_accuracy)) * self.cords_to[1]
+
+        rel_x = self.randomized_mouse_cord_x - self.cords_from[0] - self.image.get_width() / 2
+        rel_y = self.randomized_mouse_cord_y - self.cords_from[1] - self.image.get_height() / 2
+
+        vx = round(rel_x / math.sqrt(rel_x ** 2 + rel_y ** 2) * self.gun.bullet_speed, 2)
+        vy = round(rel_y / math.sqrt(rel_x ** 2 + rel_y ** 2) * self.gun.bullet_speed, 2)
+        return vx, vy
+
+    def move_trak(self):
+        """Метод класса. Собственное движение пули"""
+        # 5 переименовал для своего метода
+        self.cords[0] += self.vx / 20
+        self.cords[1] += self.vy / 20
+
+    def collision_handling(self, is_stay_gates):
+        # 5 добавил переменную для того, чтобы игрок не смог наносить урон врагам, когда он в коридоре
+        """Метод класса. Проверка коллизии пули с персонажами"""
+        sprite_collided = pygame.sprite.spritecollide(self, self.target_group, False)
+        if sprite_collided:
+            sprite_collided = sprite_collided[0]
+            if self.gun.destroy_bullets:
+                self.kill()
+            if is_stay_gates:
+                sprite_collided.hp_left -= self.damage
+
+            if self.gun.damage_type == 'splash':
+                self.splash_damage(sprite_collided)
+
+    def splash_damage(self, sprite):
+        """Метод класса.
+        Пуля наносит не только персонажу, в которого она попала, но и другим, кто я рядом с этим персонажем"""
+        splash = pygame.sprite.Sprite()
+        splash.image = pygame.Surface((self.gun.splash_radius, self.gun.splash_radius), pygame.SRCALPHA, 32)
+        splash.rect = splash.image.get_rect(center=(self.rect.centerx, self.rect.centery))
+        for target in self.gun.target_group:
+            if target != sprite:
+                if (self.rect.centerx - target.rect.centerx) ** 2 + (
+                        self.rect.centery - target.rect.centery) ** 2 < self.gun.splash_radius ** 2:
+                    target.hp_left -= self.splashdamage
+
+    def update(self, is_stay_gates):
+        """Метод класса. Обновление пули"""
+        self.move_trak()
+
+        self.rect.x = self.cords[0]
+        self.rect.y = self.cords[1]
+
+        self.collision_handling(is_stay_gates)
+
+    def move(self, x, y):
+        """Метод класса. Движение пули"""
+        self.cords[0] -= x
+        self.cords[1] -= y
+
 
 class Monster(pygame.sprite.Sprite):
-    """Класс Monster. Создается монстра"""
-    image = load_image_textures('Monsters\\monster.png', -1)  # Изначальное изображение. Нужен для коллизии
-    image = pygame.transform.scale(image, (image.get_rect().width * 2, image.get_rect().height * 2.3))
+    """Класс-родитель для класса Ghoul и Zombie. Создается монстр"""
 
-    def __init__(self, x, y):
-        super(Monster, self).__init__()
+    def __init__(self, player, center_pos, hp=100, reward=1, attack_range=200, gun=None, running_speed=50,
+                 player_avoidance=True, move_randomly=True, current_level=1):
+        super().__init__()
+        self.player = player
+        self.add(monster_sprites)
+
+        self.active_gun = gun
+
+        self.player_avoidance = player_avoidance
+        self.attack_range = attack_range
+        self.running_speed = running_speed
+        self.max_hp = hp
+        self.current_level = current_level
+        self.reward = reward // (2 if current_level >= 10 else 1)
+        self.hp_left = self.max_hp
+
+        self.hp_bar = Bars(owner=self, max_hp=self.max_hp)
 
         self.rect = self.image.get_rect()
-        self.rect.x = self.x = x
-        self.rect.y = self.y = y
+        self.rect.x = self.x = center_pos[0]
+        self.rect.y = self.y = center_pos[1]
         image = pygame.transform.scale(self.image,
                                        (self.image.get_rect().width * 2,
                                         self.image.get_rect().height - self.rect.height // 1.01))
         self.mask = pygame.mask.from_surface(image)  # маска нужна для коллизии с бочками
         # Зачем нужен новый image с изменёнными параметрами: в маске будет храниться изображение, можно сказать, ног
-        self.random_x = 0  # скорость, которая он выберет случайно
+        self.random_x = 0  # скорость гуля, которая он выберет случайно
         self.random_y = 0
-        self.delay = random.randrange(1, 11) * 30  # задержка между ходьбой
+        self.delay = random.randrange(1, 11) * 10  # задержка между ходьбой
         self.is_moving = 0  # если он двигается
+
+        self.cord_x = self.rect.x
+        self.cord_y = self.rect.y
+
+        self.shooting_timer = random.randint(0, 30)
+        self.movement_timer = 20
+        self.movement_direction = 1
+        self.move_randomly = move_randomly
+        self.cnt_attacking = 60
+
+        self.move_x = 0
+        self.move_y = 0
+
+        self.cnt = 0  # счетчик для изменения спрайтов
+        self.step = 10  # именно настолько увеличивается self.cnt
+        self.is_moving_bool = False  # он идет или нет? Вот в чем вопрос
+        self.left_right = 1  # взгляд направо - 1, взгляд налево - 0
+
+    def die(self):
+        """Метод класса. Удаление монстра"""
+        self.hp_left = 0
+        DeadPerson(self.rect.x, self.rect.y, 'Ghoul' if type(self) == Ghoul else 'Zombie')
+        self.hp_bar.kill()
+        self.kill()
+
+    def give_reward(self):
+        """Метод класса. Монстр отдает награду за свою голову игроку"""
+        reward = random.randrange(self.reward - 4, self.reward + 5)
+        self.player.give_money(reward)
+
+    def shoot(self):
+        """Метод класса. Атака монстра"""
+        if self.shooting_timer >= 0:
+            if random.randint(0, 4) == 0:
+                self.shooting_timer -= 1
+        else:
+            self.active_gun.shoot((self.player.rect.centerx, self.player.rect.centery))
+            if type(self) == Ghoul:
+                self.player.take_damage(self.active_gun.damage)
+            self.shooting_timer = 10
+            self.cnt_attacking = 0
+
+    def walk(self, movement_direction=1, random_direction=1):
+        """Метод класса. Устанавливается скорость монстра"""
+        distance = max(math.sqrt(
+            (self.rect.centerx - self.player.rect.centerx) ** 2 + (self.rect.centery - self.player.rect.centery) ** 2),
+            1)
+        vx = (self.rect.centerx - self.player.rect.centerx) / distance / 30 * self.running_speed
+        vy = (self.rect.centery - self.player.rect.centery) / distance / 30 * self.running_speed
+        self.move_x = int(-movement_direction * vx * random_direction) + self.random_x
+        self.move_y = int(-movement_direction * vy * random_direction) + self.random_y
+
+    def run_away(self):
+        if self.player_avoidance:
+            if self.current_distance_sqr < self.attack_range ** 2 / 3:
+                self.walk(movement_direction=-1)
+
+    def distance_check(self):
+        """Метод класса. Проверка дистанции от монстра до игрока"""
+        self.current_distance_sqr = (self.rect.centerx - self.player.rect.centerx) ** 2 + (
+                self.rect.centery - self.player.rect.centery) ** 2
+        if self.current_distance_sqr < (self.attack_range + 100) ** 2:
+            self.shoot()
+
+        if self.current_distance_sqr < self.attack_range ** 2:
+            self.run_away()
+        else:
+            self.walk()
+
+        self.random_movement()
+
+    def random_movement(self):
+        """Метод класса. Устанавливается случайная скорость монстра. В основном для зомби"""
+        if self.move_randomly:
+            if self.movement_timer > 0:
+                if random.randint(0, 15) == 0:
+                    self.movement_timer -= 1
+            else:
+                self.movement_direction = self.movement_direction * -1
+                self.movement_timer = 10
+            self.walk(random_direction=self.movement_direction / 2)
+
+    def update(self):
+        """Метод класса. Обновление монстра"""
+        if self.hp_left <= 0:  # смерть монстра
+            self.give_reward()
+            self.active_gun.kill()
+            self.die()
+        else:
+            self.rect.x = self.cord_x
+            self.rect.y = self.cord_y
+
+            self.active_gun.cord_x = self.rect.centerx
+            self.active_gun.cord_y = self.rect.centery
+
+            self.distance_check()
+            self.active_gun.rotate(self.player.rect.center)
 
     def draw(self, screen):
         """Метод класса. Отрисовка монстра"""
-        screen.blit(self.image, self.rect)
+        if type(self) == Ghoul and self.cnt_attacking != 60:
+            screen.blit(self.images_attack[self.cnt_attacking // 10], self.rect)
+            self.cnt_attacking += 1
+        elif self.is_moving_bool:
+            screen.blit(self.images_move[self.cnt // self.step], self.rect)
+        else:
+            screen.blit(self.images_stand[self.cnt // self.step], self.rect)
+        self.active_gun.draw(screen)
 
     def move(self, x, y):
         """Метод класса. Движение монстра относительно игрока"""
         self.rect.x -= x
+        self.cord_x = self.rect.x
         self.rect.y -= y
+        self.cord_y = self.rect.y
+
+    def set_left_right(self):
+        """Метод класса. Определяет взгляд игрока относительно расположение пользователя"""
+        # решил сделать так: мышка на левой стороне экрана игры - персонаж смотрит налево и даже когда идет направо;
+        # мышка на правой стороне экрана игры - персонаж смотрит направо и даже когда идет налево
+        # Лучше будет, если персонаж идет назад и стреляет впереди себя, а не идет прямо и стреляет куда-то позади себя
+        if self.rect.x < others.WIDTH // 2 and not self.left_right:
+            self.left_right = 1
+            self.images_move = [pygame.transform.flip(i, True, False) for i in self.images_move]
+            self.images_stand = [pygame.transform.flip(i, True, False) for i in self.images_stand]
+            if type(self) == Ghoul:
+                self.images_attack = [pygame.transform.flip(i, True, False) for i in self.images_attack]
+        elif self.rect.x > others.WIDTH // 2 and self.left_right:
+            self.left_right = 0
+            self.images_move = [pygame.transform.flip(i, True, False) for i in self.images_move]
+            self.images_stand = [pygame.transform.flip(i, True, False) for i in self.images_stand]
+            if type(self) == Ghoul:
+                self.images_attack = [pygame.transform.flip(i, True, False) for i in self.images_attack]
 
     def self_move(self):
         """Метод класса. Движение монстра вне зависимости игрока"""
+        self.rect.x += self.move_x
+        self.cord_x = self.rect.x
+        self.rect.y += self.move_y
+        self.cord_y = self.rect.y
+        x = self.move_x
+        y = self.move_y
+        if (x or y) and not self.is_moving_bool:  # если он начинает движение, но до этого стоял
+            self.cnt = 0
+            self.is_moving_bool = True
+        elif (x or y) and self.is_moving_bool:  # если он двигается
+            self.cnt += -self.cnt if self.cnt >= self.step * (len(self.images_move) - 1) else 1
+        elif not (x or y) and self.is_moving_bool:  # если он начинает стоять, но до этого двигался
+            self.is_moving_bool = False
+            self.cnt = 0
+        elif not (x or y) and not self.is_moving_bool:  # если он стоит
+            self.cnt += -self.cnt if self.cnt >= self.step * (len(self.images_stand) - 1) else 1
+        self.set_left_right()
+
+    def collide_with_wall(self, x, y, map_surface, layer, tile_size):
+        """Метод класса. Коллизия между монстром и непроходимой стеной"""
+        x = (self.rect.x + self.move_x - x + (self.rect.width if self.move_x >= 0 else 0)) // tile_size
+        y = int(self.rect.y + self.rect.height // 1.01 + self.move_y - y + (
+            (self.rect.height - self.rect.height // 1.1) if self.move_y >= 0 else 0)) // tile_size
+        # x и y - координаты относительно tiled комнаты.
+        # Так как комнаты сделано в tiled editor map, следовательно, комнаты плиточные.
+        # Тогда х и у - координаты плитки, на которой стоит монстр
+        if -1 < x < map_surface.width and -1 < y < map_surface.height:
+            image = map_surface.get_tile_image(x, y, layer)
+            if image:
+                self.move_x = 0
+                self.move_y = 0
+
+
+class Ghoul(Monster):
+    """Класс Ghoul. Создается гуль"""
+
+    def __init__(self, player, center_pos, hp=100, reward=1, attack_range=200, running_speed=50, player_avoidance=True,
+                 move_randomly=True, current_level=1):
+        self.image = images.ghoul_image
+        self.images_stand = images.ghoul_images_stand
+        self.images_move = images.ghoul_images_move
+        self.images_attack = images.ghoul_images_attack
+        gun = GUNS['Fists'].copy()
+        gun.target_group = player_group
+        gun.player = self
+        if current_level >= 20:
+            gun.damage = int(2 * self.active_gun.damage)
+        elif current_level >= 10:
+            gun.damage = int(1.5 * self.active_gun.damage)
+        super(Ghoul, self).__init__(player, center_pos, hp, reward, attack_range, gun, running_speed, player_avoidance,
+                                    move_randomly, current_level)
+
+    def self_move(self):
+        """Метод класса. Движение монстра вне зависимости игрока"""
+        # Создается случайная скорость гуля. Нужно, чтобы игроку жизнь медом не казалась
         if self.delay - 1 == 0 and self.is_moving == 0:  # если задержка закончилась и он не двигается
             self.is_moving = random.randrange(1, 21)
             self.delay = 0
-            self.random_x = random.randrange(-10, 11)
-            self.random_y = random.randrange(-10, 11)
+            self.random_x = random.randrange(-5, 6)
+            self.random_y = random.randrange(-5, 6)
         elif self.delay == 0 and self.is_moving - 1 == 0:  # если задержка на нуле и он хочет заканчивать движение
             self.is_moving = 0
-            self.delay = random.randrange(1, 11) * 30
+            self.delay = random.randrange(1, 11) * 10
             self.random_x = 0
             self.random_y = 0
         # Дальше не требуется комментариев
@@ -145,34 +714,80 @@ class Monster(pygame.sprite.Sprite):
             self.delay -= 1
         elif self.is_moving != 0 and self.delay == 0:
             self.is_moving -= 1
-            self.rect.x += self.random_x
-            self.rect.y += self.random_y
+        super(Ghoul, self).self_move()
 
-    def collide_with_wall(self, x, y, map_surface, layer, tile_size):
-        """Метод класса. Коллизия между монстром и непроходимой стеной"""
-        x = (self.rect.x + self.random_x - x + (
-            self.rect.width if self.random_x >= 0 else 0)) // tile_size
-        y = int(
-            self.rect.y + self.rect.height // 1.01 + self.random_y - y + (
-                (self.rect.height - self.rect.height // 1.1) if self.random_y >= 0 else 0)) \
-            // tile_size
-        # x и y - координаты относительно tiled комнаты.
-        # Так как комнаты сделано в tiled editor map, следовательно, комнаты плиточные.
-        # Тогда х и у - координаты плитки, на которой стоит монстр
-        if -1 < x < map_surface.width and -1 < y < map_surface.height:
-            image = map_surface.get_tile_image(x, y, layer)
-            if image:
-                self.random_x = 0
-                self.random_y = 0
+
+class Zombie(Monster):
+    """Класс Zombie. Создается зомби"""
+
+    def __init__(self, player, center_pos, hp=100, reward=1, attack_range=200, running_speed=50, player_avoidance=True,
+                 move_randomly=True, current_level=1):
+        self.image = images.zombie_image
+        self.images_stand = images.zombie_images_stand
+        self.images_move = images.zombie_images_move
+        gun = GUNS['Pistol'].copy()
+        gun.target_group = player_group
+        gun.player = self
+        gun.is_raised = True
+        gun.fire_rate *= 3
+        gun.bullet_speed = 100
+        gun.bullet_color = (255, 0, 0)
+        if current_level >= 20:
+            gun.damage = int(2 * self.active_gun.damage)
+        elif current_level >= 10:
+            gun.damage = int(1.5 * self.active_gun.damage)
+
+        super(Zombie, self).__init__(player, center_pos, hp, reward, attack_range, gun, running_speed, player_avoidance,
+                                     move_randomly, current_level)
+
+
+class Bars(pygame.sprite.Sprite):
+    """Класс Bars. Создается бар жизни монстра"""
+
+    def __init__(self, owner, max_hp=100, bar_size=(30, 10), border_size=2, bar_color=(255, 0, 0), bg_color_1=(0, 0, 0),
+                 bg_color_2=(128, 128, 128)):
+        super().__init__()
+        self.add(bar_sprites)
+
+        self.owner = owner
+        self.max_hp = max_hp
+        self.bar_size = bar_size
+        self.border_size = border_size
+        self.bar_color = bar_color
+        self.bg_color_1 = bg_color_1
+        self.bg_color_2 = bg_color_2
+
+        self.hp_left = self.max_hp
+
+        self.image = pygame.Surface((self.bar_size[0], self.bar_size[1]), pygame.SRCALPHA, 32)
+        self.rect = self.image.get_rect()
+
+    def update(self):
+        """Метод класса. Обновление бара"""
+        if self.owner.hp_left == 0:
+            self.kill()
+
+        self.hp_left = self.owner.hp_left
+
+        self.rect.x = self.owner.rect.centerx - self.bar_size[0] / 2
+        self.rect.y = self.owner.cord_y - 20
+
+        pygame.draw.rect(self.image, (64, 64, 64), (0, 0, self.bar_size[0], self.bar_size[1]), 0)
+        pygame.draw.rect(self.image, (64, 0, 0), (self.border_size, self.border_size, self.bar_size[0] -
+                                                  2 * self.border_size, self.bar_size[1] - 2 * self.border_size), 0)
+        pygame.draw.rect(self.image, (255, 64, 64), (self.border_size, self.border_size, (self.bar_size[0] -
+                                                                                          2 * self.border_size) *
+                                                     self.hp_left / self.max_hp,
+                                                     self.bar_size[1] - 2 * self.border_size), 0)
 
 
 class Barrel(pygame.sprite.Sprite):
     """Класс Barrel. Создается бочка"""
-    image = pygame.transform.scale(load_image_textures('barrel.png', -1), (28, 32))
 
     # id - 1260
     def __init__(self, x, y):
-        super(Barrel, self).__init__()
+        super(Barrel, self).__init__(barrel_group)
+        self.image = images.barrel_image
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -191,25 +806,29 @@ class Barrel(pygame.sprite.Sprite):
 
     def is_collide(self, pers, x_speed, y_speed):
         """Метод класса. Коллизия между персонажем и бочкой"""
+        height = pers.rect.height
         pers.rect.y += pers.rect.height // 1.5  # здесь не нужно, чтобы голова персонажа была над бочкой по координате у
+        pers.rect.height -= pers.rect.height // 1.5
         self.rect.x -= x_speed
-        if pygame.sprite.collide_mask(self, pers):  # вот где понадобилась маска
+        if pygame.sprite.collide_rect(self, pers):
             self.rect.x += x_speed
             x_speed = 0
         else:
             self.rect.x += x_speed
         self.rect.y -= y_speed
-        if pygame.sprite.collide_mask(self, pers):
+        if pygame.sprite.collide_rect(self, pers):
             self.rect.y += y_speed
             y_speed = 0
         else:
             self.rect.y += y_speed
+        pers.rect.height = height
         pers.rect.y -= pers.rect.height // 1.5
         return x_speed, y_speed
 
     def kill(self):
+        """Метод класса. Удаление бочки"""
         a = random.randrange(101)
-        if a <= self.probality:
+        if a <= self.probality:  # сперва надо создать бутылку исцеления для игрока, если повезет
             Heal(self.rect.x, self.rect.y)
         super(Barrel, self).kill()
 
@@ -231,9 +850,12 @@ class Torch(pygame.sprite.Sprite):
         if is_collising:
             torch_group.add(self)  # эта группа проверяет коллизию.
             # Иначе попадает группу, которая находится в классе комнаты
-        self.images = [pygame.transform.scale(load_image_textures(f'Catacombs\\{filename}{i}.png', -1),
-                                              (32 if filename != 'candleA_0' else 16, 32))
-                       for i in range(1, 5)]  # мешает filename для того, чтобы он был создан снаружи init
+        if filename == 'torch_':
+            self.images = images.torch_images
+        elif filename == 'candleA_0':
+            self.images = images.candlea_images
+        else:
+            self.images = images.candleb_images
         self.image = self.images[0]
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -261,7 +883,7 @@ class Torch(pygame.sprite.Sprite):
 
     def is_collide(self, pers, x_speed, y_speed):
         """Метод класса. Проверяет коллизию между персонажем и свечкой"""
-        pers.rect.y += pers.rect.height // 1.01  # Мы смотрим коллизию по ногам, а не по телу
+        pers.rect.y += pers.rect.height // 1.5  # Мы смотрим коллизию по ногам, а не по телу
         self.rect.x -= x_speed
         if pygame.sprite.collide_mask(self, pers):  # вот где понадобилась маска
             self.rect.x += x_speed
@@ -274,7 +896,7 @@ class Torch(pygame.sprite.Sprite):
             y_speed = 0
         else:
             self.rect.y += y_speed
-        pers.rect.y -= pers.rect.height // 1.01
+        pers.rect.y -= pers.rect.height // 1.5
         return x_speed, y_speed
 
 
@@ -311,23 +933,17 @@ class Gate:
                     else:
                         image = self.map.get_tile_image(x, y, layer)
                     if image:
-                        if self.orientation == 'horizontal' and \
-                                self.cnt // self.step == y:
-                            image = pygame.transform.chop(image, [0,
-                                                                  int(self.tile_size * (
-                                                                          self.cnt % self.step) / self.step), 0,
-                                                                  self.tile_size - int(self.tile_size * (
-                                                                          self.cnt % self.step) / self.step)])
-                            # chop для анимации
+                        if self.orientation == 'horizontal' and self.cnt // self.step == y:
+                            image = pygame.transform.chop(image, [0, int(self.tile_size * (self.cnt % self.step) /
+                                                                         self.step), 0, self.tile_size - int(
+                                self.tile_size * (self.cnt % self.step) / self.step)])
+                            # chop для анимации поднятия ворот
                             t = True
                         if self.orientation == 'horizontal':
-                            screen.blit(image, (self.x + self.tile_size * x,
-                                                self.y + self.tile_size * y - int(
-                                                    self.tile_size * self.cnt / self.step) + self.tile_size *
-                                                self.height))
+                            screen.blit(image, (self.x + self.tile_size * x, self.y + self.tile_size * y - int(
+                                self.tile_size * self.cnt / self.step) + self.tile_size * self.height))
                         else:
-                            screen.blit(image, (self.x + self.tile_size * x,
-                                                self.y + self.tile_size * y))
+                            screen.blit(image, (self.x + self.tile_size * x, self.y + self.tile_size * y))
 
             if t:
                 self._increment_step(is_stay_gates)
@@ -358,21 +974,20 @@ class Gate:
 
 class Spike(pygame.sprite.Sprite):
     """Класс Gate. Создаются шипы"""
-    images = [pygame.transform.scale(load_image_textures(f'Catacombs\\spike_{i}.png', -1), (32, 32)) for i in range(5)]
-    images.extend([pygame.transform.scale(load_image_textures(f'Catacombs\\spike_{i}.png', -1), (32, 32))
-                   for i in range(4, -1, -1)])
 
     # id - 1196
     def __init__(self, x, y):
         super(Spike, self).__init__()
+        self.images = images.spike_images
         self.image = self.images[0]  # изображение нужное для коллизии
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
         self.cnt = 0  # счетчик для изменения спрайтов
         self.step = 10  # именно настолько увеличивается self.cnt
-        self.mask = pygame.mask.from_surface(self.image)
         self.delay = 0
+
+        self.damage = 5
 
     def draw(self, screen):
         """Метод класса. Отрисовка шипов"""
@@ -385,6 +1000,7 @@ class Spike(pygame.sprite.Sprite):
 
     def increment_cnt(self):
         """Метод класса. Увеличивает self.cnt для анимации спрайта"""
+        global spike_damage_delay
         if self.delay:
             self.delay -= 1
             return
@@ -397,17 +1013,22 @@ class Spike(pygame.sprite.Sprite):
             self.cnt = 0
             self.image = self.images[0]
             self.delay = 60
+            spike_damage_delay = 1
 
-    def is_collide(self, player, x_speed, y_speed):
-        # пока в разработке
-        pass
+    def is_collide(self, player):
+        """Метод класса. Коллизия шипов с персонажем(в основном с игроком)"""
+        global spike_damage_delay
+        if pygame.sprite.collide_rect(player, self) and spike_damage_delay and 6 >= self.images.index(self.image) >= 3:
+            spike_damage_delay = 0
+            player.take_damage(self.damage)
 
 
 class Heal(pygame.sprite.Sprite):
-    image = pygame.transform.scale(load_image_textures('heal.png', -1), (28, 32))
+    """Класс Heal. Создается бутылка, которая исцеляет игрока"""
 
     def __init__(self, x, y):
         super(Heal, self).__init__(heal_group)
+        self.image = images.heal_image
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
@@ -419,519 +1040,105 @@ class Heal(pygame.sprite.Sprite):
         self.rect.x -= x
         self.rect.y -= y
 
-    def heal(self):
-        print('heal')
-        # сперва лечит игрока
+    def heal(self, player):
+        """Метод класса. Игрок пьет бутылку и исцеляется.
+        Пустая бутылка пропадает(можете представить что она разбилась"""
+        player.hp_left += self.cnt_heal  # сперва лечит игрока
+        player.hp_left = 100 if player.hp_left >= 100 else player.hp_left
         self.kill()
 
-
-import pygame
-import math
-import random
-import ui
-import pickle
-
-PLAYER_RELOAD_EVENT = pygame.USEREVENT + 1
-PLAYER_SHOOT_EVENT = pygame.USEREVENT + 2
-
-all_sprites = pygame.sprite.Group()
-entity_sprites = pygame.sprite.Group()
-player_group = pygame.sprite.GroupSingle()
-gun_sprites = pygame.sprite.Group()
-monster_sprites = pygame.sprite.Group()
-collide_group = pygame.sprite.Group()
-bullet_group = pygame.sprite.Group()
-bar_sprites = pygame.sprite.Group()
-dead_monsters = pygame.sprite.Group()
-ui_sprites = pygame.sprite.Group()
+    def copy(self, center_pos=None):
+        """Метод класса. Создается копия класса"""
+        if center_pos is None:
+            center_pos = (self.rect.x, self.rect.y)
+        return Heal(*center_pos)
 
 
-class Player(pygame.sprite.Sprite):
-    def __init__(self, center_pos=(0, 0), image=None, max_hp=100, inventory=None, hp_left=100, balance=0):
-        super().__init__(all_sprites)
-        self.add(player_group, entity_sprites)
+class Cell(pygame.sprite.Sprite):
+    """Класс Cell. Создается экземпляр плитки, которая понадобится для коллизии других объектов.
+    Она не нужна в отрисовке, но все равно нужно поддерживать"""
 
-        self.max_hp = max_hp
-        self.hp_left = hp_left
-
-        self.inventory_size = 3
-        self.inventory = inventory
-        self.active_gun = self.inventory[0]
-        self.active_gun.add(gun_sprites, all_sprites, entity_sprites)
-
-        self.cells = ui.Inventory(sprite_group=(all_sprites, ui_sprites))
-
-        self.image = pygame.Surface((50, 50), pygame.SRCALPHA, 32)
-        self.rect = self.image.get_rect()
-        pygame.draw.rect(self.image, (128, 0, 255), (0, 0, 50, 50), 0)
-
-        self.rect.x = center_pos[0] - self.image.get_width() // 2
-        self.rect.y = center_pos[1] - self.image.get_height() // 2
-
-        self.cord_x = self.rect.x
-        self.cord_y = self.rect.y
-
-        self.balance = balance
-
-    def take_damage(self, damage):
-        self.hp_left -= damage
-
-    def on_clicked(self, event):
-        if event.button == 1:
-            self.active_gun.try_shoot()
-
-    def on_k_pressed(self, event):
-        if event.key == pygame.K_g:
-            self.drop_gun()
-        if event.key == pygame.K_f:
-            self.take_gun()
-
-        if event.key == pygame.K_1:
-            self.switch_gun(0)
-        if event.key == pygame.K_2:
-            self.switch_gun(1)
-        if event.key == pygame.K_3:
-            self.switch_gun(2)
-
-    def take_gun(self):
-        if self.inventory.count(None) > 0:
-            for gun in gun_sprites:
-                if pygame.sprite.spritecollide(gun, player_group, False):
-                    if gun.can_be_raised and gun not in self.inventory:
-                        gun.is_raised = True
-                        gun.set_display(False)
-                        for i, item in enumerate(self.inventory):
-                            if item == None:
-                                self.inventory[i] = gun
-                                break
-                        break
-            self.cells.update()
-
-    def drop_gun(self):
-        if self.inventory.count(None) < 2:
-            self.active_gun.is_raised = False
-            self.active_gun.is_reloading_now = False
-            pygame.time.set_timer(self.active_gun.reload_event, 0)
-            self.active_gun.can_shoot = True
-            pygame.time.set_timer(self.active_gun.shoot_event, 0)
-
-            self.inventory.remove(self.active_gun)
-            self.inventory.append(None)
-            for item in self.inventory[::-1]:
-                if item != None:
-                    self.active_gun = item
-            self.active_gun.set_display(True)
-            self.cells.update()
-
-    def switch_gun(self, n):
-        if self.inventory[n] != None:
-            self.active_gun.is_reloading_now = False
-            pygame.time.set_timer(self.active_gun.reload_event, 0)
-            self.active_gun.can_shoot = True
-            pygame.time.set_timer(self.active_gun.shoot_event, 0)
-            self.active_gun.set_display(False)
-            self.active_gun = self.inventory[n]
-            self.active_gun.set_display(True)
-            self.active_gun.is_raised = True
-            self.cells.update()
-
-    def move(self):
-        keys = pygame.key.get_pressed()
-
-        if keys[pygame.K_w]:
-            self.cord_y -= 80 / 60
-        if keys[pygame.K_a]:
-            self.cord_x -= 80 / 60
-        if keys[pygame.K_s]:
-            self.cord_y += 80 / 60
-        if keys[pygame.K_d]:
-            self.cord_x += 80 / 60
-
-    def give_money(self, reward):
-        self.balance += reward
-
-    def update(self):
-        self.rect.x = self.cord_x
-        self.rect.y = self.cord_y
-
-
-class Gun(pygame.sprite.Sprite):
-    # damage_type: point, splash
-    def __init__(self, is_raised=False, target_group=monster_sprites, name='gun', can_be_raised=True, center_pos=(0, 0),
-                 image=None, destroy_bullets=True, damage_type='point', bullet_image=None, bullet_color=(128, 128, 128), \
-                 bullet_size=(10, 10), bullet_speed=300, fire_rate=300, shooting_accuracy=1, damage=0, splash_damage=10,
-                 splash_radius=150, ammo=10, \
-                 reload_time=3000):
-
-        super().__init__()
-        self.add(gun_sprites, all_sprites, entity_sprites)
-
-        self.target_group = target_group
-        self.name = name
-
-        # Их не изменять
-        self.center_pos = center_pos
-        self.destroy_bullets = destroy_bullets
-        self.bullet_color = bullet_color
-        self.bullet_image = bullet_image
-        self.bullet_size = bullet_size
-        self.bullet_speed = bullet_speed
-        self.damage_type = damage_type
-        self.damage = damage
-        self.splash_damage = splash_damage
-        self.splash_radius = splash_radius
-        self.ammo = ammo
-        self.fire_rate = fire_rate
-        self.shooting_accuracy = shooting_accuracy
-
-        self.ammo_amount = self.ammo
-        self.reload_time = reload_time
-
-        self.reload_event = PLAYER_RELOAD_EVENT
-        self.shoot_event = PLAYER_SHOOT_EVENT
-
-        self.original_image = image
-        if image == None:
-            self.image = pygame.Surface((25, 25), pygame.SRCALPHA, 32)
-            pygame.draw.rect(self.image, self.bullet_color, (0, 0, 25, 25), 0)
+    def __init__(self, image, x, y):
+        super(Cell, self).__init__(cell_group)
+        if image:
+            self.image = image
+            self.rect = self.image.get_rect()
+            self.rect.x = x
+            self.rect.y = y
+            self.mask = pygame.mask.from_surface(self.image)
         else:
-            self.image = pygame.transform.scale(image, (image.get_width() * 2, image.get_height() * 2))
-
-        self.rotate_image = self.image
-        self.rect = self.image.get_rect(center=center_pos)
-
-        self.cord_x = self.rect.x
-        self.cord_y = self.rect.y
-
-        self.can_be_raised = can_be_raised
-        self.is_displayed = True
-        self.is_raised = False or is_raised
-        self.is_reloading_now = False
-        self.can_shoot = True
-
-    def set_display(self, bool):
-        if bool:
-            self.is_displayed = True
-            self.add(gun_sprites, all_sprites, entity_sprites)
-        else:
-            self.is_displayed = False
-            all_sprites.remove(self)
-
-    def try_shoot(self):
-        if self.can_shoot:
-            self.shoot(target_pos=pygame.mouse.get_pos())
-            self.can_shoot = False
-            pygame.time.set_timer(self.shoot_event, self.fire_rate)
-
-    def shoot(self, target_pos):
-        if not self.is_reloading_now:
-            if self.ammo_amount != 0:
-                self.ammo_amount -= 1
-                Bullet(self, target_pos)
-            else:
-                self.is_reloading_now = True
-                pygame.time.set_timer(self.reload_event, self.reload_time)
-
-    def reload_ammo(self):
-        self.is_reloading_now = False
-        self.ammo_amount += self.ammo
-
-    def rotate(self, target):
-        if self.math_angle(target) < 0:
-            self.image = pygame.transform.flip(
-                pygame.transform.rotate(self.rotate_image, -self.math_angle(target) + 90), False, True)
-        else:
-            self.image = pygame.transform.rotate(self.rotate_image, self.math_angle(target) - 90)
-
-    def math_angle(self, target):
-        rel_x, rel_y = target[0] - self.cord_x - \
-                       self.rotate_image.get_width() / 2, target[1] - \
-                       self.cord_y - self.rotate_image.get_height() / 2
-        angle = (180 / math.pi) * math.atan2(rel_x, rel_y)
-        return angle
-
-    def copy(self):
-        return Gun(target_group=monster_sprites, can_be_raised=self.can_be_raised, name=self.name,
-                   center_pos=self.center_pos, image=self.original_image, destroy_bullets=self.destroy_bullets, \
-                   damage_type=self.damage_type, bullet_image=None, bullet_color=self.bullet_color,
-                   bullet_size=self.bullet_size, bullet_speed=self.bullet_speed, \
-                   fire_rate=self.fire_rate, shooting_accuracy=self.shooting_accuracy, damage=self.damage,
-                   splash_damage=self.splash_damage, \
-                   splash_radius=self.splash_radius, ammo=self.ammo, reload_time=self.reload_time)
-
-    def update(self):
-        self.rect.x = self.cord_x
-        self.rect.y = self.cord_y
-
-        if self.is_raised:
-            self.cord_x = player_group.sprite.cord_x + 30
-            self.cord_y = player_group.sprite.cord_y + 20
-
-            self.rotate(target=pygame.mouse.get_pos())
-
-
-class Shotgun(Gun):
-    def __init__(self, is_raised=False, target_group=monster_sprites, name='gun', \
-                 can_be_raised=True, center_pos=(0, 0), image=None, destroy_bullets=True, damage_type='point', \
-                 bullet_image=None, bullet_color=(128, 128, 128), bullet_size=(10, 10), bullet_speed=300, \
-                 fire_rate=300, shooting_accuracy=1, damage=0, splash_damage=10, splash_radius=150, ammo=10,
-                 reload_time=3000):
-        super().__init__(is_raised, target_group, name, can_be_raised, center_pos, image, destroy_bullets, \
-                         damage_type, bullet_image, bullet_color, bullet_size, bullet_speed, fire_rate,
-                         shooting_accuracy, \
-                         damage, splash_damage, splash_radius, ammo, reload_time)
-
-    def shoot(self, target_pos):
-        if not self.is_reloading_now:
-            if self.ammo_amount != 0:
-                self.ammo_amount -= 1
-                for _ in range(5):
-                    self.bullet_speed = random.randint(250, 350)
-                    Bullet(self, target_pos)
-            else:
-                self.is_reloading_now = True
-                pygame.time.set_timer(self.reload_event, self.reload_time)
-
-
-class Bullet(pygame.sprite.Sprite):
-    def __init__(self, gun, cords_to=(0, 0)):
-        super().__init__(all_sprites)
-        self.add(bullet_group, entity_sprites)
-
-        self.gun = gun
-        self.target_group = self.gun.target_group
-        self.cords_to = cords_to
-        self.cords_from = (self.gun.rect.centerx, self.gun.rect.centery)
-
-        self.cords = [self.cords_from[0], self.cords_from[1]]
-
-        if self.gun.bullet_image == None:
-            self.image = pygame.Surface((self.gun.bullet_size[0], self.gun.bullet_size[1]), pygame.SRCALPHA, 32)
-            pygame.draw.rect(self.image, self.gun.bullet_color,
-                             (0, 0, self.gun.bullet_size[0], self.gun.bullet_size[1]), 0)
-        else:
-            self.image = self.gun.bullet_image
-        self.rect = self.image.get_rect()
-        self.rect.x = self.cords_from[0]
-        self.rect.y = self.cords_from[1]
-
-        self.vx, self.vy = self.math_speed()
-        self.rotate()
-
-    def math_angle(self):
-        rel_x, rel_y = self.randomized_mouse_cord_x - self.rect.x - \
-                       self.gun.bullet_size[0] / 2, self.randomized_mouse_cord_y - \
-                       self.rect.y - self.gun.bullet_size[1] / 2
-        angle = (180 / math.pi) * math.atan2(rel_x, rel_y)
-        return angle
-
-    def rotate(self):
-        self.image = pygame.transform.rotate(self.image, self.math_angle())
-
-    def math_speed(self):
-        self.randomized_mouse_cord_x = self.cords_to[0] + random.choice([-1, 1]) * \
-                                       random.uniform(0, (1 - self.gun.shooting_accuracy)) * self.cords_to[0]
-
-        self.randomized_mouse_cord_y = self.cords_to[1] + random.choice([-1, 1]) * \
-                                       random.uniform(0, (1 - self.gun.shooting_accuracy)) * self.cords_to[1]
-
-        rel_x = self.randomized_mouse_cord_x - self.cords_from[0] - self.image.get_width() / 2
-        rel_y = self.randomized_mouse_cord_y - self.cords_from[1] - self.image.get_height() / 2
-
-        vx = round(rel_x / math.sqrt(rel_x ** 2 + rel_y ** 2) * self.gun.bullet_speed, 2)
-        vy = round(rel_y / math.sqrt(rel_x ** 2 + rel_y ** 2) * self.gun.bullet_speed, 2)
-        return (vx, vy)
-
-    def move(self):
-        self.cords[0] += self.vx / 60
-        self.cords[1] += self.vy / 60
-
-    def collision_handling(self):
-        sprite_collided = pygame.sprite.spritecollide(self, self.target_group, False)
-        if sprite_collided:
-            sprite_collided = sprite_collided[0]
-            if self.gun.destroy_bullets:
-                self.kill()
-
-            sprite_collided.hp_left -= self.gun.damage
-
-            if self.gun.damage_type == 'splash':
-                self.splash_damage(sprite_collided)
-
-    def splash_damage(self, sprite):
-        splash = pygame.sprite.Sprite()
-        splash.image = pygame.Surface((self.gun.splash_radius, self.gun.splash_radius), pygame.SRCALPHA, 32)
-        splash.rect = splash.image.get_rect(center=(self.rect.centerx, self.rect.centery))
-        for target in self.gun.target_group:
-            if target != sprite:
-                if (self.rect.centerx - target.rect.centerx) ** 2 + (
-                        self.rect.centery - target.rect.centery) ** 2 < self.gun.splash_radius ** 2:
-                    target.hp_left -= self.gun.splash_damage
-
-    def optimize(self):
-        if not 0 < self.cords[0] < 800 or \
-                not 0 < self.cords[1] < 500:
             self.kill()
 
-    def update(self):
-        self.move()
-
-        self.rect.x = self.cords[0]
-        self.rect.y = self.cords[1]
-
-        self.optimize()
-        self.collision_handling()
+    def move(self, x, y):
+        """Метод класса. Движение плиток. Нужно поддерживать реальное положение плитки"""
+        self.rect.x -= x
+        self.rect.y -= y
 
 
-class Monster(pygame.sprite.Sprite):
-    def __init__(self, center_pos, image, hp=100, reward=1, attack_range=200, gun=None, dead=False, running_speed=50,
-                 player_avoidance=True, move_randomly=True):
-        super().__init__(all_sprites)
-        self.add(monster_sprites, collide_group, entity_sprites)
+class DeadPerson(pygame.sprite.Sprite):
+    """Класс DeadPerson. Создается анимация смерти персонажей"""
 
-        if gun == None:
-            self.active_gun = Gun(name='bad pistol', damage=0, can_be_raised=False, bullet_color=(
-            random.randint(96, 196), random.randint(96, 196), random.randint(96, 196)), fire_rate=1000, ammo=-1,
-                                  shooting_accuracy=0.9, target_group=player_group)
+    def __init__(self, x, y, type_sprite):
+        super(DeadPerson, self).__init__(dead_group)
+        self.step = 10
+        self.cnt = 0
+        if type_sprite == 'Ghoul':
+            self.images = images.ghoul_images_die
+            self.rect = self.images[0].get_rect()
+            self.rect.x = x
+            self.rect.y = y
+        elif type_sprite == 'Zombie':
+            self.images = images.zombie_images_die
+            self.rect = self.images[0].get_rect()
+            self.rect.x = x
+            self.rect.y = y
         else:
-            self.active_gun = gun
-        self.active_gun.damage = 0
-        self.active_gun.can_be_raised = False
-        self.active_gun.ammo = -1
-        self.active_gun.target_group = player_group
-        self.active_gun.add(all_sprites, gun_sprites)
-
-        self.player_avoidance = player_avoidance
-        self.attack_range = attack_range
-        self.running_speed = running_speed
-        self.max_hp = hp
-        self.reward = reward
-        self.hp_left = self.max_hp
-
-        self.hp_bar = Bars(owner=self, max_hp=self.max_hp)
-
-        self.image = image
-        self.image = pygame.transform.scale(self.image, (self.image.get_width() * 3, self.image.get_height() * 3))
-        self.rect = self.image.get_rect(center=center_pos)
-
-        self.cord_x = self.rect.x
-        self.cord_y = self.rect.y
-
-        self.shooting_timer = random.randint(0, 30)
-        self.movement_timer = 20
-        self.movement_direction = 1
-        self.move_randomly = move_randomly
-
-        if dead:
-            self.die()
-
-    def respawn(self):
-        self.hp_left = self.max_hp
-        self.add(all_sprites, collide_group, monster_sprites, entity_sprites)
-        dead_monsters.remove(self)
-        self.hp_bar.add(all_sprites, bar_sprites)
-        self.active_gun.add(all_sprites, gun_sprites)
-
-    def die(self):
-        self.hp_left = 0
-        self.kill()
-        self.add(dead_monsters)
-
-    def give_reward(self):
-        player_group.sprite.give_money(self.reward)
-
-    def shoot(self):
-        if self.shooting_timer > 0:
-            if random.randint(0, 4) == 0:
-                self.shooting_timer -= 1
-        else:
-            self.active_gun.shoot((player_group.sprite.rect.centerx, player_group.sprite.rect.centery))
-            self.shooting_timer = 10
-
-    def walk(self, movement_direction=1, random_direction=1):
-        distance = max(math.sqrt((self.rect.centerx - player_group.sprite.rect.centerx) ** 2 + (
-                    self.rect.centery - player_group.sprite.rect.centery) ** 2), 1)
-        vx = (self.rect.centerx - player_group.sprite.rect.centerx) / distance / 60 * self.running_speed
-        vy = (self.rect.centery - player_group.sprite.rect.centery) / distance / 60 * self.running_speed
-
-        self.cord_x -= movement_direction * vx * random_direction
-        self.cord_y -= movement_direction * vy * random_direction
-
-    def run_away(self):
-        if self.player_avoidance:
-            if self.current_distance_sqr < self.attack_range ** 2 / 3:
-                self.walk(movement_direction=-1)
-
-    def distance_check(self):
-        self.current_distance_sqr = (self.rect.centerx - player_group.sprite.rect.centerx) ** 2 + (
-                    self.rect.centery - player_group.sprite.rect.centery) ** 2
-        if self.current_distance_sqr < (self.attack_range + 100) ** 2:
-            self.shoot()
-
-        if self.current_distance_sqr < self.attack_range ** 2:
-            self.run_away()
-        else:
-            self.walk()
-
-        self.random_movement()
-
-    def random_movement(self):
-        if self.move_randomly:
-            if self.movement_timer > 0:
-                if random.randint(0, 15) == 0:
-                    self.movement_timer -= 1
-            else:
-                self.movement_direction = self.movement_direction * -1
-                self.movement_timer = 10
-            self.walk(random_direction=self.movement_direction / 2)
-
-    def update(self):
-        if self.hp_left <= 0:
-            self.die()
-            self.give_reward()
-            self.active_gun.kill()
-        else:
-            self.rect.x = self.cord_x
-            self.rect.y = self.cord_y
-
-            self.active_gun.cord_x = self.rect.centerx
-            self.active_gun.cord_y = self.rect.centery
-
-            self.distance_check()
-            self.active_gun.rotate(player_group.sprite.rect.center)
-
-
-class Bars(pygame.sprite.Sprite):
-    def __init__(self, owner, max_hp=100, bar_size=(30, 10), border_size=2, bar_color=(255, 0, 0), bg_color_1=(0, 0, 0),
-                 bg_color_2=(128, 128, 128)):
-        super().__init__(all_sprites)
-        self.add(bar_sprites)
-
-        self.owner = owner
-        self.max_hp = max_hp
-        self.bar_size = bar_size
-        self.border_size = border_size
-        self.bar_color = bar_color
-        self.bg_color_1 = bg_color_1
-        self.bg_color_2 = bg_color_2
-
-        self.hp_left = self.max_hp
-
-        self.image = pygame.Surface((self.bar_size[0], self.bar_size[1]), pygame.SRCALPHA, 32)
-        self.rect = self.image.get_rect()
-
-    def update(self):
-        if dead_monsters in self.owner.groups() or len(self.owner.groups()) == 0:
             self.kill()
 
-        self.hp_left = self.owner.hp_left
+    def move(self, x, y):
+        """Метод класса. Движение мертвого персонажа"""
+        self.rect.x -= x
+        self.rect.y -= y
 
-        self.rect.x = self.owner.rect.centerx - self.bar_size[0] / 2
-        self.rect.y = self.owner.cord_y - 20
+    def draw(self, screen):
+        """Метод класса. Отрисовка мертвого персонажа"""
+        if self.cnt >= len(self.images) * self.step + 50:
+            self.kill()
+        else:
+            if self.cnt < len(self.images) * self.step:
+                screen.blit(self.images[self.cnt // self.step], self.rect)
+            else:
+                screen.blit(self.images[-1], self.rect)
+            self.cnt += 1
 
-        pygame.draw.rect(self.image, (64, 64, 64), (0, 0, self.bar_size[0], self.bar_size[1]), 0)
-        pygame.draw.rect(self.image, (64, 0, 0), (self.border_size, self.border_size, self.bar_size[0] - \
-                                                  2 * self.border_size, self.bar_size[1] - 2 * self.border_size), 0)
-        pygame.draw.rect(self.image, (255, 64, 64), (self.border_size, self.border_size, (self.bar_size[0] - \
-                                                                                          2 * self.border_size) * self.hp_left / self.max_hp,
-                                                     self.bar_size[1] - 2 * self.border_size), 0)
+
+# Виды оружия:
+GUNS = {
+    'FirstGun': Gun(name='FirstGun', center_pos=(-100, -100), ammo=7, image=GUN_TEXTURES['Pistol'],
+                    damage=100),
+    'Ak47': Gun(name='Ak47', image=GUN_TEXTURES['Ak47'], center_pos=(-100, -100), ammo=30, damage=15,
+                bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=220, shooting_accuracy=0.95),
+    'Pistol': Gun(name='pistol', center_pos=(-10000, -10000), ammo=10, image=GUN_TEXTURES['Pistol'], damage=10),
+    'Fists': Gun(name='Fists', ammo=-1, damage=5, center_pos=(-10000, -10000), image=GUN_TEXTURES['Transperent'],
+                 bullet_image=GUN_TEXTURES['Transperent'], ),
+    'Uzi': Gun(name='Uzi', fire_rate=100, center_pos=(-100, -100), shooting_accuracy=0.6, damage=10, ammo=30,
+               reload_time=500, image=GUN_TEXTURES['Uzi']),
+    'Sniper': Gun(name='Sniper', fire_rate=2000, damage=100, center_pos=(-100, -100), ammo=20,
+                  reload_time=3000, bullet_color=(255, 128, 128), bullet_speed=600, image=GUN_TEXTURES['Sniper']),
+    'GrenadeLauncher': Gun(name='GrenadeLauncher', center_pos=(-100, -100), fire_rate=1000,
+                           shooting_accuracy=0.8, damage=30, damage_type='splash', splash_damage=30,
+                           splash_radius=100, bullet_color=(64, 64, 196), image=GUN_TEXTURES['GrenadeLauncher']),
+    'BallLightningLauncher': Gun(name='BallLightningLauncher', center_pos=(-100, -100), fire_rate=100, damage=1000,
+                                 ammo=1, reload_time=5000, destroy_bullets=False, bullet_color=(128, 128, 255),
+                                 bullet_speed=50, bullet_size=(30, 30), image=GUN_TEXTURES['BallLightningLauncher']),
+    'Infinity': Gun(name='Infinity', fire_rate=300, center_pos=(-100, -100), damage=30, bullet_color=(196, 196, 64),
+                    ammo=20, image=GUN_TEXTURES['Infinity']),
+    'MinePlacer': Gun(name='MiniPlacer', bullet_color=(196, 128, 64), center_pos=(-100, -100), damage=100,
+                      bullet_speed=0, ammo=2, reload_time=5000, bullet_size=(20, 20), image=GUN_TEXTURES['MinePlacer']),
+    'ThroughShooter': Gun(name='ThroughShooter', bullet_color=(64, 64, 128), damage=10, ammo=50,
+                          reload_time=4000, image=GUN_TEXTURES['ThroughShooter'], destroy_bullets=False),
+    'Shotgun': Shotgun(name='Shotgun', bullet_color=(64, 64, 128), damage=30, ammo=7, shooting_accuracy=0.7,
+                       reload_time=2000, image=GUN_TEXTURES['Shotgun'], fire_rate=500),
+    'M4A4': Gun(name='M4A4', bullet_color=(128, 128, 128), damage=15, ammo=20, reload_time=3000,
+                image=GUN_TEXTURES['M4A4'], bullet_speed=350, fire_rate=230),
+}

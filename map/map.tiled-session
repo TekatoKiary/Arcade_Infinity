@@ -3,16 +3,16 @@
         "height": 4300,
         "width": 2
     },
-    "activeFile": "barrels_and_spike/map1/variant1.tmx",
+    "activeFile": "map3.tmx",
     "expandedProjectPaths": [
-        "barrels_and_spike/map3",
         "barrels_and_spike/map0",
-        "ready_map",
+        "barrels_and_spike",
         "barrels_and_spike/map2",
+        "barrels_and_spike/map3",
+        "barrels_and_spike/map1",
         "barrels_and_spike/map4",
         ".",
-        "barrels_and_spike/map1",
-        "barrels_and_spike",
+        "ready_map",
         "barrels_and_spike/map5"
     ],
     "file.lastUsedOpenFilter": "Все файлы (*)",
@@ -81,9 +81,9 @@
         },
         "barrels_and_spike/map1/variant1.tmx": {
             "scale": 0.8002130681818181,
-            "selectedLayer": 0,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 272.42744297505993,
+                "x": 273.6771101446703,
                 "y": 354.28064258453895
             }
         },
@@ -161,10 +161,18 @@
         },
         "begin_room.tmx": {
             "scale": 0.8002130681818181,
-            "selectedLayer": 3,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 354.280642584539,
-                "y": 354.28064258453895
+                "x": 717.3089553563505,
+                "y": 253.0576018460992
+            }
+        },
+        "bottom_wall.tmx": {
+            "scale": 0.9904829545454545,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 352.3533629714613,
+                "y": 25.745016492184163
             }
         },
         "decorative.tsx": {
@@ -172,10 +180,34 @@
         },
         "end_room.tmx": {
             "scale": 0.8002130681818181,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 356.1551433389545,
+                "y": 354.28064258453895
+            }
+        },
+        "horizontal_corridor.tmx": {
+            "scale": 1.2105902777777777,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 288.2891151584684,
+                "y": 96.2340456044744
+            }
+        },
+        "horizontal_gate.tmx": {
+            "scale": 5.44765625,
             "selectedLayer": 0,
             "viewCenter": {
-                "x": 351.156474660513,
-                "y": 351.78130824531826
+                "x": 64.24781299297291,
+                "y": 24.13882116735982
+            }
+        },
+        "left_wall.tmx": {
+            "scale": 0.8002130681818181,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 14.996006035324399,
+                "y": 249.30860033726816
             }
         },
         "mainlevbuild.tsx": {
@@ -185,58 +217,58 @@
         },
         "map0.tmx": {
             "scale": 0.7421875,
-            "selectedLayer": 0,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 351.6631578947368,
+                "x": 351.66315789473686,
                 "y": 353.6842105263158
             }
         },
         "map1.tmx": {
             "scale": 1,
-            "selectedLayer": 0,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 359.5,
-                "y": 468.5
+                "x": 359,
+                "y": 216.5
             }
         },
         "map2.tmx": {
-            "scale": 0.5,
+            "scale": 1,
             "selectedLayer": 1,
             "viewCenter": {
-                "x": 453,
-                "y": 175
+                "x": 788,
+                "y": 299.5
             }
         },
         "map3.tmx": {
             "scale": 0.75,
-            "selectedLayer": 1,
+            "selectedLayer": 2,
             "viewCenter": {
-                "x": 279.3333333333333,
+                "x": 278.66666666666663,
                 "y": 349.99999999999994
             }
         },
         "map4.tmx": {
             "scale": 0.8002130681818181,
-            "selectedLayer": 3,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 463.626519925446,
-                "y": 308.0429573089554
+                "x": 364.9028135262271,
+                "y": 414.2646667258366
             }
         },
         "map5.tmx": {
             "scale": 0.8002130681818181,
-            "selectedLayer": 2,
+            "selectedLayer": 1,
             "viewCenter": {
-                "x": 349.28197390609745,
-                "y": 353.0309754149286
+                "x": 349.9068074909027,
+                "y": 354.28064258453895
             }
         },
         "map6.tmx": {
             "scale": 0.75,
-            "selectedLayer": 2,
+            "selectedLayer": 1,
             "viewCenter": {
                 "x": 369.33333333333337,
-                "y": 383.33333333333337
+                "y": 159.33333333333331
             }
         },
         "picture_wall3.tmx": {
@@ -485,6 +517,46 @@
                 "x": 77.13854619685807,
                 "y": 44.87441199964498
             }
+        },
+        "right_wall.tmx": {
+            "scale": 0.8002130681818181,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 14.996006035324399,
+                "y": 249.30860033726816
+            }
+        },
+        "room_with_chest.tmx": {
+            "scale": 0.8002130681818181,
+            "selectedLayer": 2,
+            "viewCenter": {
+                "x": 356.1551433389545,
+                "y": 354.28064258453895
+            }
+        },
+        "top_wall.tmx": {
+            "scale": 0.9904829545454545,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 351.8485587265166,
+                "y": 39.87953535063821
+            }
+        },
+        "vertical_corridor.tmx": {
+            "scale": 0.9028044871794871,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 64.24425312860564,
+                "y": 312.9138191177776
+            }
+        },
+        "vertical_gate.tmx": {
+            "scale": 3.5209374999999996,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 8.236442708795607,
+                "y": 80.23431259430195
+            }
         }
     },
     "last.externalTilesetPath": "C:/Users/1/PycharmProjects/Arcade_Infinity/map",
@@ -497,23 +569,24 @@
     "map.width": 44,
     "mapScene.enableWorlds": true,
     "openFiles": [
-        "end_room.tmx",
-        "barrels_and_spike/map1/variant1.tmx"
+        "top_wall.tmx",
+        "begin_room.tmx",
+        "map3.tmx"
     ],
     "project": "map.tiled-project",
     "recentFiles": [
-        "end_room.tmx",
-        "barrels_and_spike/map1/variant1.tmx",
-        "barrels_and_spike/map1/variant0.tmx",
-        "barrels_and_spike/map2/variant0.tmx",
+        "top_wall.tmx",
+        "begin_room.tmx",
+        "map3.tmx",
+        "right_wall.tmx",
+        "left_wall.tmx",
+        "bottom_wall.tmx",
+        "horizontal_corridor.tmx",
+        "vertical_gate.tmx",
+        "room_with_chest.tmx",
+        "vertical_corridor.tmx",
         "map6.tmx",
-        "map5.tmx",
-        "barrels_and_spike/map5/variant0.tmx",
-        "map0.tmx",
-        "map4.tmx",
-        "map2.tmx",
-        "barrels_and_spike/map2/variant1.tmx",
-        "map1.tmx"
+        "map5.tmx"
     ],
     "tileset.lastUsedFilter": "Файлы набора тайлов Tiled (*.tsx *.xml)",
     "tileset.lastUsedFormat": "tsx",
