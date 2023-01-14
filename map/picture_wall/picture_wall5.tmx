@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.9" tiledversion="1.9.2" orientation="orthogonal" renderorder="right-down" width="4" height="3" tilewidth="16" tileheight="16" infinite="0" nextlayerid="2" nextobjectid="1">
+ <tileset firstgid="1" source="mainlevbuild.tsx"/>
+ <layer id="1" name="Слой тайлов 1" width="4" height="3">
+  <data encoding="csv">
+1094,1095,1096,1097,
+1158,1159,1160,1161,
+1222,1223,1224,1225
+</data>
+ </layer>
+</map>
