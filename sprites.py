@@ -212,9 +212,11 @@ class Gun(pygame.sprite.Sprite):
         self.ammo_amount += self.ammo
 
     def rotate(self, target):
-        self.image = pygame.transform.rotate(
-            self.rotate_image, self.math_angle(target) - 90)
-
+        if self.math_angle(target) < 0:
+            self.image = pygame.transform.flip(pygame.transform.rotate(self.rotate_image, -self.math_angle(target) + 90), False, True)
+        else:
+            self.image = pygame.transform.rotate(self.rotate_image, self.math_angle(target) - 90)
+            
     def math_angle(self, target):
         rel_x, rel_y = target[0] - self.cord_x - \
             self.rotate_image.get_width() / 2, target[1] - \
@@ -237,6 +239,26 @@ class Gun(pygame.sprite.Sprite):
             self.cord_y = player_group.sprite.cord_y + 20
 
             self.rotate(target=pygame.mouse.get_pos())
+
+class Shotgun(Gun):
+    def __init__(self, is_raised=False, target_group=monster_sprites, name='gun', \
+        can_be_raised=True, center_pos=(0, 0), image=None, destroy_bullets=True, damage_type='point', \
+            bullet_image=None, bullet_color=(128, 128, 128), bullet_size=(10, 10), bullet_speed=300, \
+                fire_rate=300, shooting_accuracy=1, damage=0, splash_damage=10, splash_radius=150, ammo=10, reload_time=3000):
+        super().__init__(is_raised, target_group, name, can_be_raised, center_pos, image, destroy_bullets, \
+            damage_type, bullet_image, bullet_color, bullet_size, bullet_speed, fire_rate, shooting_accuracy, \
+                damage, splash_damage, splash_radius, ammo, reload_time)
+    
+    def shoot(self, target_pos):
+        if not self.is_reloading_now:
+            if self.ammo_amount != 0:
+                self.ammo_amount -= 1
+                for _ in range(5):
+                    self.bullet_speed = random.randint(250, 350)
+                    Bullet(self, target_pos)
+            else:
+                self.is_reloading_now = True
+                pygame.time.set_timer(self.reload_event, self.reload_time)
 
 
 class Bullet(pygame.sprite.Sprite):
@@ -334,9 +356,14 @@ class Monster(pygame.sprite.Sprite):
         self.add(monster_sprites, collide_group, entity_sprites)
 
         if gun == None:
-            self.active_gun = Gun(name='bad pistol', damage=5, can_be_raised=False, bullet_color=(random.randint(96, 196), random.randint(96, 196), random.randint(96, 196)), fire_rate=1000, ammo=-1, shooting_accuracy=0.9, target_group=player_group)
+            self.active_gun = Gun(name='bad pistol', damage=0, can_be_raised=False, bullet_color=(random.randint(96, 196), random.randint(96, 196), random.randint(96, 196)), fire_rate=1000, ammo=-1, shooting_accuracy=0.9, target_group=player_group)
         else:
             self.active_gun = gun
+        self.active_gun.damage = 0
+        self.active_gun.can_be_raised = False
+        self.active_gun.ammo = -1
+        self.active_gun.target_group = player_group
+        self.active_gun.add(all_sprites, gun_sprites)
 
         self.player_avoidance = player_avoidance
         self.attack_range = attack_range

@@ -246,4 +246,6 @@ class Inventory():
             if cell != None:
                 if cell == sprites.player_group.sprite.active_gun:
                     self.buttons[i].update_image(image='main_ui.png', image_pos=(274, 156), image_size=(56, 56))
-                self.buttons[i].image.blit(cell.rotate_image, cell.rotate_image.get_rect())
+                gun_rect = 29 - cell.rotate_image.get_rect()[2] / 2, 29 - cell.rotate_image.get_rect()[3] / 2, \
+                    cell.rotate_image.get_rect()[2], cell.rotate_image.get_rect()[3] 
+                self.buttons[i].image.blit(cell.rotate_image, gun_rect)
