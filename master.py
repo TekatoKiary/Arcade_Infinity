@@ -308,7 +308,7 @@ def init_sprites():
     except Exception:
         forced_save_update(current_save_id)
     player.hp_left = player_stats['player_hp']
-    player.balance = player_stats['player_balance']
+    player.balance = player_stats['player_balance'] + 10000
     player.set_inventory([GUNS[i].copy() if i else None for i in player_stats['player_inventory']])
     current_level = player_stats['level']
     player.set_current_level(current_level)

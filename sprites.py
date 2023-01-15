@@ -322,7 +322,7 @@ class Gun(pygame.sprite.Sprite):
             center_pos = self.center_pos
         return Gun(player=None, target_group=monster_sprites, can_be_raised=self.can_be_raised, name=self.name,
                    center_pos=center_pos, image=self.original_image, destroy_bullets=self.destroy_bullets,
-                   damage_type=self.damage_type, bullet_image=None, bullet_color=self.bullet_color,
+                   damage_type=self.damage_type, bullet_image=self.bullet_image, bullet_color=self.bullet_color,
                    bullet_size=self.bullet_size, bullet_speed=self.bullet_speed, fire_rate=self.fire_rate,
                    shooting_accuracy=self.shooting_accuracy, damage=self.damage, splash_damage=self.splash_damage,
                    splash_radius=self.splash_radius, ammo=self.ammo, reload_time=self.reload_time)
@@ -394,6 +394,7 @@ class Bullet(pygame.sprite.Sprite):
             pygame.draw.rect(self.image, self.gun.bullet_color,
                              (0, 0, self.gun.bullet_size[0], self.gun.bullet_size[1]), 0)
         else:
+            print(self.gun.name, self.gun.bullet_image)
             self.image = self.gun.bullet_image
         self.rect = self.image.get_rect()
         self.rect.x = self.cords_from[0]
@@ -1115,30 +1116,30 @@ class DeadPerson(pygame.sprite.Sprite):
 # Виды оружия:
 GUNS = {
     'FirstGun': Gun(name='FirstGun', center_pos=(-100, -100), ammo=7, image=GUN_TEXTURES['Pistol'],
-                    damage=100),
+                    damage=100, bullet_image=images.BULLET_TEXTURES['DefaultBullet']),
     'Ak47': Gun(name='Ak47', image=GUN_TEXTURES['Ak47'], center_pos=(-100, -100), ammo=30, damage=15,
-                bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=220, shooting_accuracy=0.95),
-    'Pistol': Gun(name='pistol', center_pos=(-10000, -10000), ammo=10, image=GUN_TEXTURES['Pistol'], damage=10),
+                bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=220, shooting_accuracy=0.95, bullet_image=images.BULLET_TEXTURES['DefaultBullet']),
+    'Pistol': Gun(name='pistol', center_pos=(-10000, -10000), ammo=10, image=GUN_TEXTURES['Pistol'], damage=10, bullet_image=images.BULLET_TEXTURES['DefaultBullet']),
     'Fists': Gun(name='Fists', ammo=-1, damage=5, center_pos=(-10000, -10000), image=GUN_TEXTURES['Transperent'],
-                 bullet_image=GUN_TEXTURES['Transperent'], ),
+                 bullet_image=GUN_TEXTURES['Transperent']),
     'Uzi': Gun(name='Uzi', fire_rate=100, center_pos=(-100, -100), shooting_accuracy=0.6, damage=10, ammo=30,
-               reload_time=500, image=GUN_TEXTURES['Uzi']),
+               reload_time=500, image=GUN_TEXTURES['Uzi'], bullet_image=images.BULLET_TEXTURES['DefaultBulletGray']),
     'Sniper': Gun(name='Sniper', fire_rate=2000, damage=100, center_pos=(-100, -100), ammo=20,
-                  reload_time=3000, bullet_color=(255, 128, 128), bullet_speed=600, image=GUN_TEXTURES['Sniper']),
+                  reload_time=3000, bullet_color=(255, 128, 128), bullet_speed=600, image=GUN_TEXTURES['Sniper'], bullet_image=images.BULLET_TEXTURES['DefaultBulletRustyCopper']),
     'GrenadeLauncher': Gun(name='GrenadeLauncher', center_pos=(-100, -100), fire_rate=1000,
                            shooting_accuracy=0.8, damage=30, damage_type='splash', splash_damage=30,
-                           splash_radius=100, bullet_color=(64, 64, 196), image=GUN_TEXTURES['GrenadeLauncher']),
+                           splash_radius=100, bullet_color=(64, 64, 196), image=GUN_TEXTURES['GrenadeLauncher'], bullet_image=images.BULLET_TEXTURES['Grenade']),
     'BallLightningLauncher': Gun(name='BallLightningLauncher', center_pos=(-100, -100), fire_rate=100, damage=1000,
                                  ammo=1, reload_time=5000, destroy_bullets=False, bullet_color=(128, 128, 255),
-                                 bullet_speed=50, bullet_size=(30, 30), image=GUN_TEXTURES['BallLightningLauncher']),
-    'Infinity': Gun(name='Infinity', fire_rate=300, center_pos=(-100, -100), damage=30, bullet_color=(196, 196, 64),
-                    ammo=20, image=GUN_TEXTURES['Infinity']),
+                                 bullet_speed=50, bullet_size=(30, 30), image=GUN_TEXTURES['BallLightningLauncher'], bullet_image=images.BULLET_TEXTURES['BallLightning']),
+    'Infinity': Gun(name='Infinity', fire_rate=300, center_pos=(-100, -100), damage=15, bullet_color=(196, 196, 64),
+                    ammo=9999, image=GUN_TEXTURES['Infinity'], bullet_image=images.BULLET_TEXTURES['DefaultBulletGold']),
     'MinePlacer': Gun(name='MiniPlacer', bullet_color=(196, 128, 64), center_pos=(-100, -100), damage=100,
-                      bullet_speed=0, ammo=2, reload_time=5000, bullet_size=(20, 20), image=GUN_TEXTURES['MinePlacer']),
+                      bullet_speed=0, ammo=2, reload_time=5000, bullet_size=(20, 20), image=GUN_TEXTURES['MinePlacer'], bullet_image=images.BULLET_TEXTURES['Mine']),
     'ThroughShooter': Gun(name='ThroughShooter', bullet_color=(64, 64, 128), damage=10, ammo=50,
-                          reload_time=4000, image=GUN_TEXTURES['ThroughShooter'], destroy_bullets=False),
+                          reload_time=4000, image=GUN_TEXTURES['ThroughShooter'], destroy_bullets=False, bullet_image=images.BULLET_TEXTURES['LaserBullet']),
     'Shotgun': Shotgun(name='Shotgun', bullet_color=(64, 64, 128), damage=30, ammo=7, shooting_accuracy=0.7,
                        reload_time=2000, image=GUN_TEXTURES['Shotgun'], fire_rate=500),
     'M4A4': Gun(name='M4A4', bullet_color=(128, 128, 128), damage=15, ammo=20, reload_time=3000,
-                image=GUN_TEXTURES['M4A4'], bullet_speed=350, fire_rate=230),
+                image=GUN_TEXTURES['M4A4'], bullet_speed=350, fire_rate=230, bullet_image=images.BULLET_TEXTURES['DefaultBulletGray']),
 }
