@@ -16,7 +16,6 @@ from images import GUN_TEXTURES
 PLAYER_RELOAD_EVENT = pygame.USEREVENT + 1
 PLAYER_SHOOT_EVENT = pygame.USEREVENT + 2
 
-# 5 функция load_image перенесена в image.py
 
 # В принципе, если перевести название, то сразу станет понятно, что за группы спрайтов
 all_sprites = pygame.sprite.Group()
@@ -47,7 +46,8 @@ class Player(pygame.sprite.Sprite):
         self.current_level = 1
 
         self.inventory_size = 3
-        # 5 self.inventory перенесен в метод set_inventory
+        self.inventory = []
+
         self.images_stand = images.player_images_stand
         self.images_move = images.player_images_move
         self.rect = self.image.get_rect()
@@ -70,6 +70,7 @@ class Player(pygame.sprite.Sprite):
 
     def set_inventory(self, inventory):
         """Метод класса. Установка инвентаря игрока"""
+        [i.kill() for i in self.inventory if i]
         self.inventory = inventory
         for i in self.inventory:
             if i:
@@ -156,7 +157,7 @@ class Player(pygame.sprite.Sprite):
         if self.inventory.count(None) > 0:
             for gun in gun_sprites:
                 if pygame.sprite.spritecollide(gun, player_group, False):
-                    if gun.can_be_raised and gun not in self.inventory:
+                    if gun.can_be_raised and gun not in self.inventory and not gun.is_raised:
                         gun.player = self
                         gun.is_raised = True
                         gun.set_display(False)
@@ -293,7 +294,7 @@ class Gun(pygame.sprite.Sprite):
         """Метод класса. Производится подобие выстрела, то есть просто создается пуля"""
         if not self.is_reloading_now:
             if self.ammo_amount > 0 or self.ammo < 0:
-                self.ammo_amount -= 1  # 5 поправил твой код
+                self.ammo_amount -= 1
                 Bullet(self, target_pos)
             if self.ammo_amount <= 0:
                 self.is_reloading_now = True
@@ -333,7 +334,6 @@ class Gun(pygame.sprite.Sprite):
         self.rect.y = self.cord_y
 
         if self.is_raised:
-            # 5 подправил код для вращения игрока
             if self.left_right != self.player.left_right and self == self.player.active_gun:
                 self.left_right = self.player.left_right
                 self.rotate_image = pygame.transform.flip(self.rotate_image, False, True)
@@ -342,7 +342,6 @@ class Gun(pygame.sprite.Sprite):
 
             if type(self.player) == Player:
                 self.rotate(target=pygame.mouse.get_pos())
-            # 5 ----------------------
 
     def move(self, x, y):
         """Метод класса. Движение оружия"""
@@ -430,12 +429,10 @@ class Bullet(pygame.sprite.Sprite):
 
     def move_trak(self):
         """Метод класса. Собственное движение пули"""
-        # 5 переименовал для своего метода
         self.cords[0] += self.vx / 20
         self.cords[1] += self.vy / 20
 
     def collision_handling(self, is_stay_gates):
-        # 5 добавил переменную для того, чтобы игрок не смог наносить урон врагам, когда он в коридоре
         """Метод класса. Проверка коллизии пули с персонажами"""
         sprite_collided = pygame.sprite.spritecollide(self, self.target_group, False)
         if sprite_collided:
@@ -530,6 +527,7 @@ class Monster(pygame.sprite.Sprite):
         """Метод класса. Удаление монстра"""
         self.hp_left = 0
         DeadPerson(self.rect.x, self.rect.y, 'Ghoul' if type(self) == Ghoul else 'Zombie')
+        self.active_gun.kill()
         self.hp_bar.kill()
         self.kill()
 
@@ -594,7 +592,6 @@ class Monster(pygame.sprite.Sprite):
         """Метод класса. Обновление монстра"""
         if self.hp_left <= 0:  # смерть монстра
             self.give_reward()
-            self.active_gun.kill()
             self.die()
         else:
             self.rect.x = self.cord_x
@@ -689,6 +686,7 @@ class Ghoul(Monster):
         gun = GUNS['Fists'].copy()
         gun.target_group = player_group
         gun.player = self
+        gun.can_be_raised = False
         if current_level >= 20:
             gun.damage = int(2 * self.active_gun.damage)
         elif current_level >= 10:
@@ -732,6 +730,7 @@ class Zombie(Monster):
         gun.fire_rate *= 3
         gun.bullet_speed = 100
         gun.bullet_color = (255, 0, 0)
+        gun.can_be_raised = False
         if current_level >= 20:
             gun.damage = int(2 * self.active_gun.damage)
         elif current_level >= 10:
@@ -1118,7 +1117,7 @@ GUNS = {
                     damage=100),
     'Ak47': Gun(name='Ak47', image=GUN_TEXTURES['Ak47'], center_pos=(-100, -100), ammo=30, damage=15,
                 bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=220, shooting_accuracy=0.95),
-    'Pistol': Gun(name='pistol', center_pos=(-10000, -10000), ammo=10, image=GUN_TEXTURES['Pistol'], damage=10),
+    'Pistol': Gun(name='pistol', center_pos=(-10000, -10000), ammo=-1, image=GUN_TEXTURES['Pistol'], damage=10),
     'Fists': Gun(name='Fists', ammo=-1, damage=5, center_pos=(-10000, -10000), image=GUN_TEXTURES['Transperent'],
                  bullet_image=GUN_TEXTURES['Transperent'], ),
     'Uzi': Gun(name='Uzi', fire_rate=100, center_pos=(-100, -100), shooting_accuracy=0.6, damage=10, ammo=30,
@@ -1131,8 +1130,8 @@ GUNS = {
     'BallLightningLauncher': Gun(name='BallLightningLauncher', center_pos=(-100, -100), fire_rate=100, damage=1000,
                                  ammo=1, reload_time=5000, destroy_bullets=False, bullet_color=(128, 128, 255),
                                  bullet_speed=50, bullet_size=(30, 30), image=GUN_TEXTURES['BallLightningLauncher']),
-    'Infinity': Gun(name='Infinity', fire_rate=300, center_pos=(-100, -100), damage=30, bullet_color=(196, 196, 64),
-                    ammo=20, image=GUN_TEXTURES['Infinity']),
+    'Infinity': Gun(name='Infinity', fire_rate=300, center_pos=(-100, -100), damage=15, bullet_color=(196, 196, 64),
+                    ammo=-1, image=GUN_TEXTURES['Infinity']),
     'MinePlacer': Gun(name='MiniPlacer', bullet_color=(196, 128, 64), center_pos=(-100, -100), damage=100,
                       bullet_speed=0, ammo=2, reload_time=5000, bullet_size=(20, 20), image=GUN_TEXTURES['MinePlacer']),
     'ThroughShooter': Gun(name='ThroughShooter', bullet_color=(64, 64, 128), damage=10, ammo=50,

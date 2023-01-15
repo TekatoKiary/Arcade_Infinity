@@ -170,7 +170,7 @@ class RoomCorridor:
         """Метод класса. Удаляет спрайты объектов"""
         [i.kill() for i in self.torch_group]
         [i.kill() for i in self.spike_group]
-        [i.kill() for i in self.monster_group]
+        [i.die() for i in self.monster_group]
         [i.kill() for i in self.barrel_group]
 
 
@@ -288,7 +288,7 @@ class Room(RoomCorridor):
                     if i % 2 == 0 else \
                     sprites.Zombie(player=player, move_randomly=True, attack_range=300,
                                    center_pos=(self.x + self.tile_size * x, self.y + self.tile_size * y - 28),
-                                   player_avoidance=0.9, running_speed=70, current_level=current_level, reward=10)
+                                   player_avoidance=True, running_speed=70, current_level=current_level, reward=10)
                 self.monster_group.add(monster)
 
     def render(self, screen, x_speed, y_speed, player):

@@ -242,4 +242,3 @@ class Inventory:
                                            pygame.transform.flip(cell.rotate_image, False, True),
                                            (28 - cell.rotate_image.get_width() // 2,
                                             28 - cell.rotate_image.get_height() // 2))
-                # 5 изменено под изменение оружий

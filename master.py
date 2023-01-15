@@ -1,4 +1,3 @@
-import time
 import pygame
 import random
 import os
@@ -216,9 +215,6 @@ class Labyrinth:
         screen.blit(font, (others.WIDTH // 2 - font.get_width() // 2, 150))
 
 
-def update_fps(sprite):
-    sprite.update_text(text=f'{clock.get_fps():2.0f}')
-
 
 def update_hp_bar(bar, health_percent):  # обновляет информацию о здоровье игрока
     size_delta = (1 - health_percent) * 94
@@ -331,15 +327,11 @@ if __name__ == '__main__':
     player = sprites.Player()
 
     # Ui
-    fps = ui.Text(pos=(5, 5), sprite_group=sprites.ui_sprites)
     player_info = ui.Img(pos=(20, 20), sprite_group=(sprites.all_sprites, sprites.ui_sprites), image_pos=(56, 0),
                          image_size=(154, 48))
-    # Переделать.
-    # 5 Переделывать не надо. Все нормально стоит, но все же чуть-чуть подправил иконку
     player_icon = pygame.transform.scale(player.image, (player.image.get_width() / 1.5,
                                                         player.image.get_height() / 1.5))
     player_info.image.blit(player_icon, (13, 12, player.image.get_width(), player.image.get_height()))
-    # /\ /\ /\ /\ /\ /\
     player_hp_bar = ui.Img(pos=(20 + 54, 20 + 4), image_pos=(214, 0), image_size=(94, 18),
                            sprite_group=(sprites.all_sprites, sprites.ui_sprites))
     shop_button = ui.Buttons(pos=(720, 20), sprite_group=(sprites.all_sprites, sprites.ui_sprites), image_pos=(138, 52),
@@ -355,7 +347,7 @@ if __name__ == '__main__':
     Sniper = ui.ShopItems(GUNS['Sniper'], 1500)
     GrenadeLauncher = ui.ShopItems(GUNS['GrenadeLauncher'], 650)
     BallLightningLauncher = ui.ShopItems(GUNS['BallLightningLauncher'], 750)
-    Infinity = ui.ShopItems(GUNS['Infinity'], 150)
+    Infinity = ui.ShopItems(GUNS['Infinity'], 400)
     MinePlacer = ui.ShopItems(GUNS['MinePlacer'], 700)
     Ak47 = ui.ShopItems(GUNS['Ak47'], 600)
     Pistol = ui.ShopItems(GUNS['FirstGun'], 100)
@@ -370,7 +362,7 @@ if __name__ == '__main__':
     shop.add_item(*shop_items)
 
 
-    def set_game_paused(flag):  # 5 лучше не называть переменными bool
+    def set_game_paused(flag):
         global game_paused
         if flag:
             game_paused = True
@@ -382,7 +374,7 @@ if __name__ == '__main__':
                 sprites.all_sprites.remove(sprite)
 
 
-    def set_game_started(flag):  # 5 лучше не называть переменными bool
+    def set_game_started(flag):
         global game_started
         if flag:
             game_started = True
@@ -393,7 +385,7 @@ if __name__ == '__main__':
             game_started = False
 
 
-    def set_loading_menu_opened(flag):  # 5 лучше не называть переменными bool
+    def set_loading_menu_opened(flag):
         global loading_menu_opened
         if flag:
             loading_menu_opened = True
@@ -437,7 +429,7 @@ if __name__ == '__main__':
                                scale=1.5)
     exit_button_on_pause = ui.Buttons(pos=(345, 180), image_pos=(214, 248), image_size=(65, 28),
                                       sprite_group=pause_group, scale=1.5)
-    # 5 Они и так в группе, так что не обязательно делать переменные к ним без нужды
+
     ui.Text(pos=(30, 340), sprite_group=pause_group, text='press W, A, S, D to move', size=14)
     ui.Text(pos=(30, 370), sprite_group=pause_group, text='press F to take the gun', size=14)
     ui.Text(pos=(30, 400), sprite_group=pause_group, text='press G to drop the gun', size=14)
@@ -534,6 +526,9 @@ if __name__ == '__main__':
                         set_game_paused(False)
                         set_game_started(False)
                         shop.set_visible(False)
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        set_game_paused(False)
 
             sprites.all_sprites.draw(screen)
         elif game_over:
@@ -549,6 +544,7 @@ if __name__ == '__main__':
                         shop.set_visible(False)
                         lab.clear_lab()
                     if restart_button.mouse_clicked():
+                        lab.clear_lab()
                         forced_save_update(current_save_id)
                         init_sprites()
                         lab = Labyrinth()
@@ -565,7 +561,8 @@ if __name__ == '__main__':
                             heal[0].heal(player)  # персонаж увеличивает здоровье
                     if event.key == pygame.K_KP_ENTER or event.key == pygame.K_RETURN:
                         lab.enter_next_level()
-
+                    if event.key == pygame.K_ESCAPE:
+                        set_game_paused(True)
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     can_shoot = True
                     # ===============================================================================
@@ -619,7 +616,6 @@ if __name__ == '__main__':
             update_hp_bar(player_hp_bar, player.hp_left / player.max_hp)
             update_player_balance(player_balance)
             update_player_ammo(player_ammo)
-            update_fps(fps)
         pygame.display.update()
         clock.tick(FPS)
     pygame.quit()
