@@ -215,7 +215,6 @@ class Labyrinth:
         screen.blit(font, (others.WIDTH // 2 - font.get_width() // 2, 150))
 
 
-
 def update_hp_bar(bar, health_percent):  # обновляет информацию о здоровье игрока
     health_percent = max(0, min(1, health_percent))
     size_delta = (1 - health_percent) * 94
@@ -304,8 +303,8 @@ def init_sprites():
         player_stats = game_load(current_save_id)
     except Exception:
         forced_save_update(current_save_id)
-    player.hp_left = player_stats['player_hp'] + 1000
-    player.balance = player_stats['player_balance'] + 10000
+    player.hp_left = player_stats['player_hp']
+    player.balance = player_stats['player_balance']
     player.set_inventory([GUNS[i].copy() if i else None for i in player_stats['player_inventory']])
     current_level = player_stats['level']
     player.set_current_level(current_level)
