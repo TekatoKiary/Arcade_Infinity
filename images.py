@@ -129,3 +129,16 @@ GUN_TEXTURES = {
     'Shotgun': cut_image(load_image(name='guns_outlined_free.png', path='textures'), (0, 101), (31, 9)),
     'M4A4': cut_image(load_image(name='guns_outlined_free.png', path='textures'), (65, 67), (27, 13)),
 }
+
+# Текстуры пуль:
+BULLET_TEXTURES = {
+    'DefaultBullet': cut_image(load_image(name='bullets.png', path='textures'), (0, 0), (6, 10)),
+    'DefaultBulletGray': cut_image(load_image(name='bullets.png', path='textures'), (8, 0), (6, 10)),
+    'DefaultBulletGold': cut_image(load_image(name='bullets.png', path='textures'), (16, 0), (6, 10)),
+    'DefaultBulletRustyCopper': cut_image(load_image(name='bullets.png', path='textures'), (24, 0), (6, 10)),
+    'BallLightning': cut_image(load_image(name='bullets.png', path='textures'), (9, 12), (16, 16)),
+    'LaserBullet': cut_image(load_image(name='bullets.png', path='textures'), (27, 12), (6, 14)),
+    'Grenade': cut_image(load_image(name='bullets.png', path='textures'), (35, 12), (9, 9)),
+    'Mine': cut_image(load_image(name='bullets.png', path='textures'), (46, 12), (15, 15)),
+    'CircleBullet': cut_image(load_image(name='bullets.png', path='textures'), (0, 12), (7, 7)),
+}

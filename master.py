@@ -217,6 +217,7 @@ class Labyrinth:
 
 
 def update_hp_bar(bar, health_percent):  # обновляет информацию о здоровье игрока
+    health_percent = max(0, min(1, health_percent))
     size_delta = (1 - health_percent) * 94
     bar.update_image(image='main_ui.png', image_pos=(214 + size_delta, 0), image_size=(96 - size_delta, 18))
 
@@ -303,8 +304,8 @@ def init_sprites():
         player_stats = game_load(current_save_id)
     except Exception:
         forced_save_update(current_save_id)
-    player.hp_left = player_stats['player_hp']
-    player.balance = player_stats['player_balance']
+    player.hp_left = player_stats['player_hp'] + 1000
+    player.balance = player_stats['player_balance'] + 10000
     player.set_inventory([GUNS[i].copy() if i else None for i in player_stats['player_inventory']])
     current_level = player_stats['level']
     player.set_current_level(current_level)
@@ -353,7 +354,7 @@ if __name__ == '__main__':
     Pistol = ui.ShopItems(GUNS['FirstGun'], 100)
     heal = ui.ShopItems(Heal(0, 0), 150)
     ThroughShooter = ui.ShopItems(GUNS['ThroughShooter'], 700)  # Дороже АК47 из-за кол-во патронов 50 > 30
-    Shotgun = ui.ShopItems(GUNS['Shotgun'], 200)
+    Shotgun = ui.ShopItems(GUNS['Shotgun'], 400)
     M4A4 = ui.ShopItems(GUNS['M4A4'], 800)  # Дороже АК47 из-за урона 15 > 10
 
     shop_items = [Uzi, Sniper, GrenadeLauncher, BallLightningLauncher, Infinity, MinePlacer, Ak47, Pistol, heal,
