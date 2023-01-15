@@ -343,7 +343,7 @@ if __name__ == '__main__':
     shop = ui.Shop(player=player, pos=(590, 60), image_pos=(0, 84), image_size=(210, 312),
                    sprite_group=(sprites.ui_sprites, sprites.all_sprites))
     # Тестовое добавление товаров в магазин
-    Uzi = ui.ShopItems(GUNS['Uzi'], 50)
+    Uzi = ui.ShopItems(GUNS['Uzi'], 100)
     Sniper = ui.ShopItems(GUNS['Sniper'], 1500)
     GrenadeLauncher = ui.ShopItems(GUNS['GrenadeLauncher'], 650)
     BallLightningLauncher = ui.ShopItems(GUNS['BallLightningLauncher'], 750)
@@ -356,8 +356,8 @@ if __name__ == '__main__':
     Shotgun = ui.ShopItems(GUNS['Shotgun'], 400)
     M4A4 = ui.ShopItems(GUNS['M4A4'], 800)  # Дороже АК47 из-за урона 15 > 10
 
-    shop_items = [Uzi, Sniper, GrenadeLauncher, BallLightningLauncher, Infinity, MinePlacer, Ak47, Pistol, heal,
-                  ThroughShooter, Shotgun, M4A4]
+    shop_items = [heal, Pistol, Uzi, Infinity, Shotgun, Ak47, GrenadeLauncher, MinePlacer, ThroughShooter, BallLightningLauncher, \
+        M4A4, Sniper]
 
     shop.add_item(*shop_items)
 
@@ -418,17 +418,13 @@ if __name__ == '__main__':
     pause_button = ui.Buttons((390, 10), image_pos=(320, 44), image_size=(36, 36),
                               sprite_group=(sprites.all_sprites, sprites.ui_sprites))
 
-    black_bg = pygame.sprite.Sprite(pause_group)
-    black_bg.image = pygame.Surface((1920, 1080), pygame.SRCALPHA, 32)
-    black_bg.rect = black_bg.image.get_rect()
-    black_bg.image.set_alpha(128)
-    pygame.draw.rect(black_bg.image, (0, 0, 0), (0, 0, 1920, 1080))
+    main_menu_bg = ui.Img(pos=(0, 0), image='pause.png', image_pos=(0, 0), image_size=(800, 500),
+                          sprite_group=pause_group)
 
-    buttons_bg = ui.Img(pos=(280, 80), image_pos=(0, 400), image_size=(152, 132), sprite_group=pause_group, scale=1.5)
-    resume_button = ui.Buttons(pos=(345, 130), image_pos=(214, 216), image_size=(65, 28), sprite_group=pause_group,
-                               scale=1.5)
-    exit_button_on_pause = ui.Buttons(pos=(345, 180), image_pos=(214, 248), image_size=(65, 28),
-                                      sprite_group=pause_group, scale=1.5)
+    resume_button = ui.Buttons(pos=(345, 180), image_pos=(214, 216), image_size=(65, 28), sprite_group=pause_group,
+                               scale=2)
+    exit_button_on_pause = ui.Buttons(pos=(345, 240), image_pos=(214, 248), image_size=(65, 28),
+                                      sprite_group=pause_group, scale=2)
 
     ui.Text(pos=(30, 340), sprite_group=pause_group, text='press W, A, S, D to move', size=14)
     ui.Text(pos=(30, 370), sprite_group=pause_group, text='press F to take the gun', size=14)
@@ -461,17 +457,13 @@ if __name__ == '__main__':
     current_save = ui.Text(pos=(385, 150), text=f"save {current_save_id}", sprite_group=main_menu_group, size=14)
     # game lost
 
-    red_bg = pygame.sprite.Sprite(game_over_sprites)
-    red_bg.image = pygame.Surface((1920, 1080), pygame.SRCALPHA, 32)
-    red_bg.rect = black_bg.image.get_rect()
-    red_bg.image.set_alpha(128)
-    pygame.draw.rect(red_bg.image, (64, 0, 0), (0, 0, 1920, 1080))
+    game_over_bg = ui.Img(pos=(0, 0), image='game_over.png', image_pos=(0, 0), image_size=(800, 500),
+                          sprite_group=game_over_sprites)
+    restart_button = ui.Buttons(pos=(325, 200), image_pos=(283, 216), image_size=(65, 28),
+                                sprite_group=game_over_sprites, scale=2)
+    exit_button_on_game_over = ui.Buttons(pos=(325, 260), image_pos=(214, 248), image_size=(65, 28),
+                                          sprite_group=game_over_sprites, scale=2)
 
-    restart_button = ui.Buttons(pos=(345, 130), image_pos=(283, 216), image_size=(65, 28),
-                                sprite_group=game_over_sprites, scale=1.5)
-    exit_button_on_game_over = ui.Buttons(pos=(345, 180), image_pos=(214, 248), image_size=(65, 28),
-                                          sprite_group=game_over_sprites, scale=1.5)
-    ui.Text(pos=(200, 290), sprite_group=game_over_sprites, text='GAME OVER', size=64)
 
     game_started = False
     game_paused = False
