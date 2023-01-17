@@ -163,7 +163,7 @@ class RoomCorridor:
                 break
             x_speed, y_speed = i.is_collide(player, x_speed, y_speed)
         if pygame.sprite.spritecollideany(player, self.spike_group):
-            [i.is_collide(player) for i in self.spike_group]
+            [i.is_collide(player, is_stay_gates) for i in self.spike_group]
         return x_speed, y_speed
 
     def clear(self):

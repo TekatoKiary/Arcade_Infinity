@@ -77,7 +77,7 @@ zombie_image = cut_image(
     load_image('Monsters\\zombie old lady.png', 'textures'), (11, 0),
     (10, 16))  # Изначальное изображение. Нужен для коллизии
 zombie_image = pygame.transform.scale(zombie_image,
-                                      (zombie_image.get_rect().width * 2.5, zombie_image.get_rect().height * 3))
+                                      (zombie_image.get_rect().width * 2.5, zombie_image.get_rect().height * 3 - 3))
 zombie_images_stand = [cut_image(
     load_image('Monsters\\zombie old lady.png', 'textures'), (11 + i * 32, 0), (10, 16)) for i in range(5)]
 zombie_images_stand = \

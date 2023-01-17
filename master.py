@@ -3,10 +3,14 @@ import random
 import os
 import others
 import pickle
+import sys
 
 pygame.init()  # инициализируем заранее чтобы не было проблем в images.py при загрузке изображений
 pygame.display.set_caption('Arcade Infinity')
 screen = pygame.display.set_mode(others.SIZE)
+
+if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+    os.chdir(sys._MEIPASS)
 
 
 # Комната 704*704
@@ -343,21 +347,22 @@ if __name__ == '__main__':
     shop = ui.Shop(player=player, pos=(590, 60), image_pos=(0, 84), image_size=(210, 312),
                    sprite_group=(sprites.ui_sprites, sprites.all_sprites))
     # Тестовое добавление товаров в магазин
-    Uzi = ui.ShopItems(GUNS['Uzi'], 100)
+    Uzi = ui.ShopItems(GUNS['Uzi'], 50)
     Sniper = ui.ShopItems(GUNS['Sniper'], 1500)
-    GrenadeLauncher = ui.ShopItems(GUNS['GrenadeLauncher'], 650)
-    BallLightningLauncher = ui.ShopItems(GUNS['BallLightningLauncher'], 750)
-    Infinity = ui.ShopItems(GUNS['Infinity'], 400)
-    MinePlacer = ui.ShopItems(GUNS['MinePlacer'], 700)
-    Ak47 = ui.ShopItems(GUNS['Ak47'], 600)
-    Pistol = ui.ShopItems(GUNS['FirstGun'], 100)
-    heal = ui.ShopItems(Heal(0, 0), 150)
-    ThroughShooter = ui.ShopItems(GUNS['ThroughShooter'], 700)  # Дороже АК47 из-за кол-во патронов 50 > 30
-    Shotgun = ui.ShopItems(GUNS['Shotgun'], 400)
-    M4A4 = ui.ShopItems(GUNS['M4A4'], 800)  # Дороже АК47 из-за урона 15 > 10
+    GrenadeLauncher = ui.ShopItems(GUNS['GrenadeLauncher'], 600)
+    BallLightningLauncher = ui.ShopItems(GUNS['BallLightningLauncher'], 900)
+    Infinity = ui.ShopItems(GUNS['Infinity'], 350)
+    MinePlacer = ui.ShopItems(GUNS['MinePlacer'], 500)
+    Ak47 = ui.ShopItems(GUNS['Ak47'], 500)
+    Pistol = ui.ShopItems(GUNS['FirstGun'], 50)
+    heal = ui.ShopItems(Heal(0, 0), 100)
+    ThroughShooter = ui.ShopItems(GUNS['ThroughShooter'], 600)
+    # Дороже АК47 из-за кол-во патронов 50 > 30 + стреляет ровнее
+    Shotgun = ui.ShopItems(GUNS['Shotgun'], 450)
+    M4A4 = ui.ShopItems(GUNS['M4A4'], 550)  # Дороже АК47 из-за урона 15 > 10
 
-    shop_items = [heal, Pistol, Uzi, Infinity, Shotgun, Ak47, GrenadeLauncher, MinePlacer, ThroughShooter, BallLightningLauncher, \
-        M4A4, Sniper]
+    shop_items = [heal, Pistol, Uzi, Infinity, Shotgun, Ak47, GrenadeLauncher, MinePlacer, ThroughShooter,
+                  BallLightningLauncher, M4A4, Sniper]
 
     shop.add_item(*shop_items)
 
@@ -463,7 +468,6 @@ if __name__ == '__main__':
                                 sprite_group=game_over_sprites, scale=2)
     exit_button_on_game_over = ui.Buttons(pos=(325, 260), image_pos=(214, 248), image_size=(65, 28),
                                           sprite_group=game_over_sprites, scale=2)
-
 
     game_started = False
     game_paused = False
@@ -611,3 +615,7 @@ if __name__ == '__main__':
         pygame.display.update()
         clock.tick(FPS)
     pygame.quit()
+
+# для pyinstaller
+# map;saves;textures;ui
+# pyinstaller --add-data="textures/;textures/" --add-data="ui/;ui/" --add-data="map/;map/" --add-data="saves/;saves/" --noconsole --onefile master.py --icon="adventurer_stand.ico"

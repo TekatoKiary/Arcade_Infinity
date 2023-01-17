@@ -555,7 +555,7 @@ class Monster(pygame.sprite.Sprite):
             self.active_gun.shoot((self.player.rect.centerx, self.player.rect.centery))
             if type(self) == Ghoul:
                 self.player.take_damage(self.active_gun.damage)
-            self.shooting_timer = 10
+            self.shooting_timer = 10 if type(self) == Ghoul else 20
             self.cnt_attacking = 0
 
     def walk(self, movement_direction=1, random_direction=1):
@@ -687,7 +687,7 @@ class Monster(pygame.sprite.Sprite):
 class Ghoul(Monster):
     """Класс Ghoul. Создается гуль"""
 
-    def __init__(self, player, center_pos, hp=100, reward=1, attack_range=200, running_speed=50, player_avoidance=True,
+    def __init__(self, player, center_pos, hp=75, reward=1, attack_range=200, running_speed=50, player_avoidance=True,
                  move_randomly=True, current_level=1):
         self.image = images.ghoul_image
         self.images_stand = images.ghoul_images_stand
@@ -697,6 +697,8 @@ class Ghoul(Monster):
         gun.target_group = player_group
         gun.player = self
         gun.can_be_raised = False
+        gun.fire_rate *= 2 if current_level < 15 else 1
+        hp *= 2 if current_level >= 15 else 1
         if current_level >= 20:
             gun.damage = int(2 * self.active_gun.damage)
         elif current_level >= 10:
@@ -728,22 +730,22 @@ class Ghoul(Monster):
 class Zombie(Monster):
     """Класс Zombie. Создается зомби"""
 
-    def __init__(self, player, center_pos, hp=100, reward=1, attack_range=200, running_speed=50, player_avoidance=True,
+    def __init__(self, player, center_pos, hp=50, reward=1, attack_range=200, running_speed=50, player_avoidance=True,
                  move_randomly=True, current_level=1):
         self.image = images.zombie_image
         self.images_stand = images.zombie_images_stand
         self.images_move = images.zombie_images_move
         gun = GUNS['Pistol'].copy() if current_level < 15 else GUNS[
             random.choice(['Pistol', 'ThroughShooter', 'Infinity'])].copy()
-        gun.damage = 10
+        gun.damage = 5 if current_level < 15 else 10
         gun.ammo = -1
+        hp *= 2 if current_level >= 15 else 1
         gun.ammo_amount = -1
         gun.target_group = player_group
         gun.player = self
         gun.is_raised = True
         gun.fire_rate *= 3 if current_level < 15 else 2
-        gun.bullet_speed = 100
-        gun.bullet_color = (255, 0, 0)
+        gun.bullet_speed = 50 if current_level < 5 else 100
         gun.can_be_raised = False
         if current_level >= 20:
             gun.damage = int(2 * self.active_gun.damage)
@@ -1028,10 +1030,11 @@ class Spike(pygame.sprite.Sprite):
             self.delay = 60
             spike_damage_delay = 1
 
-    def is_collide(self, player):
+    def is_collide(self, player, is_stay_gates):
         """Метод класса. Коллизия шипов с персонажем(в основном с игроком)"""
         global spike_damage_delay
-        if pygame.sprite.collide_rect(player, self) and spike_damage_delay and 6 >= self.images.index(self.image) >= 3:
+        if pygame.sprite.collide_rect(player, self) and spike_damage_delay and 6 >= self.images.index(self.image) >= 3 \
+                and is_stay_gates:
             spike_damage_delay = 0
             player.take_damage(self.damage)
 
@@ -1046,7 +1049,7 @@ class Heal(pygame.sprite.Sprite):
         self.rect.x = x
         self.rect.y = y
 
-        self.cnt_heal = 20
+        self.cnt_heal = 35
 
     def move(self, x, y):
         """Метод класса. Движение бутылки исцеления"""
@@ -1127,13 +1130,13 @@ class DeadPerson(pygame.sprite.Sprite):
 
 # Виды оружия:
 GUNS = {
-    'FirstGun': Gun(name='FirstGun', center_pos=(-100, -100), ammo=7, image=GUN_TEXTURES['Pistol'],
-                    damage=13, bullet_image=images.BULLET_TEXTURES['DefaultBullet']),
+    'FirstGun': Gun(name='FirstGun', center_pos=(-100, -100), ammo=16, image=GUN_TEXTURES['Pistol'],
+                    damage=15, bullet_image=images.BULLET_TEXTURES['DefaultBullet']),
     'Ak47': Gun(name='Ak47', image=GUN_TEXTURES['Ak47'], center_pos=(-100, -100), ammo=30, damage=15,
                 bullet_color=(255, 255, 255), bullet_size=(5, 20), fire_rate=220, shooting_accuracy=0.95,
                 bullet_image=images.BULLET_TEXTURES['DefaultBullet']),
-    'Pistol': Gun(name='pistol', center_pos=(-10000, -10000), ammo=-1, image=GUN_TEXTURES['Pistol'], damage=10,
-                  bullet_image=images.BULLET_TEXTURES['DefaultBullet']),
+    'Pistol': Gun(name='pistol', center_pos=(-10000, -10000), ammo=-1, image=GUN_TEXTURES['Pistol'], damage=5,
+                  bullet_image=images.BULLET_TEXTURES['DefaultBullet'], fire_rate=600),
     'Fists': Gun(name='Fists', ammo=-1, damage=5, center_pos=(-10000, -10000), image=GUN_TEXTURES['Transperent'],
                  bullet_image=GUN_TEXTURES['Transperent']),
     'Uzi': Gun(name='Uzi', fire_rate=100, center_pos=(-100, -100), shooting_accuracy=0.75, damage=10, ammo=30,
@@ -1149,12 +1152,13 @@ GUNS = {
                                  ammo=1, reload_time=3500, destroy_bullets=False, bullet_color=(128, 128, 255),
                                  bullet_speed=50, bullet_size=(30, 30), image=GUN_TEXTURES['BallLightningLauncher'],
                                  bullet_image=images.BULLET_TEXTURES['BallLightning']),
-    'Infinity': Gun(name='Infinity', fire_rate=300, center_pos=(-100, -100), damage=15, bullet_color=(196, 196, 64),
+    'Infinity': Gun(name='Infinity', fire_rate=300, center_pos=(-100, -100), damage=18, bullet_color=(196, 196, 64),
                     ammo=9999, image=GUN_TEXTURES['Infinity'],
                     bullet_image=images.BULLET_TEXTURES['DefaultBulletGold']),
     'MinePlacer': Gun(name='MiniPlacer', bullet_color=(196, 128, 64), center_pos=(-100, -100), damage=100,
                       bullet_speed=0, ammo=2, reload_time=4000, bullet_size=(20, 20), image=GUN_TEXTURES['MinePlacer'],
-                      bullet_image=images.BULLET_TEXTURES['Mine'], damage_type='splash', splash_damage=50, splash_radius=200),
+                      bullet_image=images.BULLET_TEXTURES['Mine'], damage_type='splash', splash_damage=50,
+                      splash_radius=200),
     'ThroughShooter': Gun(name='ThroughShooter', bullet_color=(64, 64, 128), damage=7, ammo=50,
                           reload_time=4000, image=GUN_TEXTURES['ThroughShooter'], destroy_bullets=False,
                           bullet_image=images.BULLET_TEXTURES['LaserBullet']),
