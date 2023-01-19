@@ -698,7 +698,10 @@ class Ghoul(Monster):
         gun.player = self
         gun.can_be_raised = False
         gun.fire_rate *= 2 if current_level < 15 else 1
-        hp *= 2 if current_level >= 15 else 1
+        if current_level >= 15:
+            hp *= 2
+        elif current_level >= 5:
+            hp *= 1.5
         if current_level >= 20:
             gun.damage = int(2 * self.active_gun.damage)
         elif current_level >= 10:
@@ -739,7 +742,6 @@ class Zombie(Monster):
             random.choice(['Pistol', 'ThroughShooter', 'Infinity'])].copy()
         gun.damage = 5 if current_level < 15 else 10
         gun.ammo = -1
-        hp *= 2 if current_level >= 15 else 1
         gun.ammo_amount = -1
         gun.target_group = player_group
         gun.player = self
@@ -747,6 +749,10 @@ class Zombie(Monster):
         gun.fire_rate *= 3 if current_level < 15 else 2
         gun.bullet_speed = 50 if current_level < 5 else 100
         gun.can_be_raised = False
+        if current_level >= 15:
+            hp *= 2
+        elif current_level >= 5:
+            hp *= 1.5
         if current_level >= 20:
             gun.damage = int(2 * self.active_gun.damage)
         elif current_level >= 10:
@@ -1145,21 +1151,21 @@ GUNS = {
                   reload_time=3000, bullet_color=(255, 128, 128), bullet_speed=600, image=GUN_TEXTURES['Sniper'],
                   bullet_image=images.BULLET_TEXTURES['DefaultBulletRustyCopper']),
     'GrenadeLauncher': Gun(name='GrenadeLauncher', center_pos=(-100, -100), fire_rate=1000,
-                           shooting_accuracy=0.9, damage=30, damage_type='splash', splash_damage=30,
+                           shooting_accuracy=0.9, damage=20, damage_type='splash', splash_damage=20,
                            splash_radius=200, bullet_color=(64, 64, 196), image=GUN_TEXTURES['GrenadeLauncher'],
                            bullet_image=images.BULLET_TEXTURES['Grenade']),
     'BallLightningLauncher': Gun(name='BallLightningLauncher', center_pos=(-100, -100), fire_rate=100, damage=1000,
                                  ammo=1, reload_time=3500, destroy_bullets=False, bullet_color=(128, 128, 255),
                                  bullet_speed=50, bullet_size=(30, 30), image=GUN_TEXTURES['BallLightningLauncher'],
                                  bullet_image=images.BULLET_TEXTURES['BallLightning']),
-    'Infinity': Gun(name='Infinity', fire_rate=300, center_pos=(-100, -100), damage=18, bullet_color=(196, 196, 64),
+    'Infinity': Gun(name='Infinity', fire_rate=300, center_pos=(-100, -100), damage=15, bullet_color=(196, 196, 64),
                     ammo=9999, image=GUN_TEXTURES['Infinity'],
                     bullet_image=images.BULLET_TEXTURES['DefaultBulletGold']),
     'MinePlacer': Gun(name='MiniPlacer', bullet_color=(196, 128, 64), center_pos=(-100, -100), damage=100,
                       bullet_speed=0, ammo=2, reload_time=4000, bullet_size=(20, 20), image=GUN_TEXTURES['MinePlacer'],
                       bullet_image=images.BULLET_TEXTURES['Mine'], damage_type='splash', splash_damage=50,
                       splash_radius=200),
-    'ThroughShooter': Gun(name='ThroughShooter', bullet_color=(64, 64, 128), damage=7, ammo=50,
+    'ThroughShooter': Gun(name='ThroughShooter', bullet_color=(64, 64, 128), damage=7, ammo=20,
                           reload_time=4000, image=GUN_TEXTURES['ThroughShooter'], destroy_bullets=False,
                           bullet_image=images.BULLET_TEXTURES['LaserBullet']),
     'Shotgun': Shotgun(name='Shotgun', bullet_color=(64, 64, 128), damage=8, ammo=8, shooting_accuracy=0.85,

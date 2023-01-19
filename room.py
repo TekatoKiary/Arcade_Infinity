@@ -282,7 +282,7 @@ class Room(RoomCorridor):
             cnt_monsters = random.randrange(4, 7)  # экспериментально
             for i in range(cnt_monsters):
                 x, y = random.choice(self.possible_pos)
-                monster = sprites.Ghoul(player=player, attack_range=10, running_speed=70, reward=15,
+                monster = sprites.Ghoul(player=player, attack_range=10, running_speed=70, reward=10,
                                         center_pos=(self.x + self.tile_size * x, self.y + self.tile_size * y - 49),
                                         move_randomly=False, player_avoidance=False, current_level=current_level) \
                     if i % 2 == 0 else \

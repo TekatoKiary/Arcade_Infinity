@@ -349,16 +349,15 @@ if __name__ == '__main__':
     # Тестовое добавление товаров в магазин
     Uzi = ui.ShopItems(GUNS['Uzi'], 50)
     Sniper = ui.ShopItems(GUNS['Sniper'], 1500)
-    GrenadeLauncher = ui.ShopItems(GUNS['GrenadeLauncher'], 600)
+    GrenadeLauncher = ui.ShopItems(GUNS['GrenadeLauncher'], 700)
     BallLightningLauncher = ui.ShopItems(GUNS['BallLightningLauncher'], 900)
-    Infinity = ui.ShopItems(GUNS['Infinity'], 350)
-    MinePlacer = ui.ShopItems(GUNS['MinePlacer'], 500)
+    Infinity = ui.ShopItems(GUNS['Infinity'], 450)
+    MinePlacer = ui.ShopItems(GUNS['MinePlacer'], 400)
     Ak47 = ui.ShopItems(GUNS['Ak47'], 500)
     Pistol = ui.ShopItems(GUNS['FirstGun'], 50)
     heal = ui.ShopItems(Heal(0, 0), 100)
-    ThroughShooter = ui.ShopItems(GUNS['ThroughShooter'], 600)
-    # Дороже АК47 из-за кол-во патронов 50 > 30 + стреляет ровнее
-    Shotgun = ui.ShopItems(GUNS['Shotgun'], 450)
+    ThroughShooter = ui.ShopItems(GUNS['ThroughShooter'], 900)
+    Shotgun = ui.ShopItems(GUNS['Shotgun'], 650)
     M4A4 = ui.ShopItems(GUNS['M4A4'], 550)  # Дороже АК47 из-за урона 15 > 10
 
     shop_items = [heal, Pistol, Uzi, Infinity, Shotgun, Ak47, GrenadeLauncher, MinePlacer, ThroughShooter,
@@ -617,5 +616,5 @@ if __name__ == '__main__':
     pygame.quit()
 
 # для pyinstaller
-# map;saves;textures;ui
-# pyinstaller --add-data="textures/;textures/" --add-data="ui/;ui/" --add-data="map/;map/" --add-data="saves/;saves/" --noconsole --onefile master.py --icon="adventurer_stand.ico"
+# pyinstaller --add-data="textures/;textures/" --add-data="ui/;ui/" --add-data="map/;map/" --add-data="saves/;saves/"
+# --noconsole --onefile master.py --icon="adventurer_stand.ico"
